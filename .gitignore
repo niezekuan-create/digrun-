@@ -1,0 +1,20 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Build outputs
+dist/
+miniprogram/dist/
+backend/dist/
+
+# Env
+.env
+.env.local
+*.env
+
+# WeChat
+miniprogram/.tea/
+project.private.config.json
+
+# OS
+.DS_Store

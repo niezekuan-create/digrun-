@@ -1,0 +1,165 @@
+page {
+  height: 100%;
+  background: #000;
+}
+
+.detail-page {
+  height: 100%;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-loading {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.loading-text {
+  font-size: 24rpx;
+  color: #444;
+  letter-spacing: 4px;
+}
+
+.detail-scroll {
+  flex: 1;
+  overflow: hidden;
+}
+
+.detail-hero {
+  padding: 48rpx 40rpx 40rpx;
+  border-bottom: 1rpx solid #1a1a1a;
+}
+
+.detail-date {
+  display: block;
+  font-size: 24rpx;
+  color: #666;
+  letter-spacing: 4px;
+  margin-bottom: 16rpx;
+}
+
+.detail-title {
+  display: block;
+  font-size: 48rpx;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 2px;
+  line-height: 1.2;
+  margin-bottom: 24rpx;
+}
+
+.detail-badges {
+  display: flex;
+  gap: 16rpx;
+}
+
+.badge {
+  padding: 8rpx 20rpx;
+  border-radius: 4rpx;
+
+  &.badge-white { background: #fff; }
+  &.badge-grey { background: #333; }
+  &.badge-outline { border: 1rpx solid #444; }
+}
+
+.badge-text {
+  font-size: 20rpx;
+  font-weight: 700;
+  letter-spacing: 2px;
+
+  .badge-white & { color: #000; }
+  .badge-grey & { color: #666; }
+  .badge-outline & { color: #888; }
+}
+
+.detail-body {
+  padding: 40rpx;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16rpx;
+  padding: 8rpx 0;
+}
+
+.info-section {
+  padding: 8rpx 0;
+}
+
+.info-label {
+  font-size: 22rpx;
+  color: #555;
+  letter-spacing: 2px;
+  min-width: 80rpx;
+}
+
+.info-value {
+  font-size: 28rpx;
+  color: #fff;
+  font-weight: 500;
+  text-align: right;
+  flex: 1;
+}
+
+.info-desc {
+  display: block;
+  font-size: 28rpx;
+  color: #ccc;
+  line-height: 1.8;
+  margin-top: 16rpx;
+}
+
+.divider {
+  height: 1rpx;
+  background: #1a1a1a;
+  margin: 20rpx 0;
+}
+
+.detail-footer {
+  padding: 24rpx 40rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid #1a1a1a;
+  background: #000;
+}
+
+.footer-row {
+  display: flex;
+  gap: 16rpx;
+}
+
+.btn-primary-dark, .btn-disabled, .btn-checked {
+  height: 96rpx;
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.btn-primary-dark {
+  background: #fff;
+}
+
+.btn-disabled {
+  background: #222;
+}
+
+.btn-checked {
+  background: #1a3a1a;
+}
+
+.btn-text {
+  font-size: 28rpx;
+  font-weight: 700;
+  letter-spacing: 3px;
+
+  .btn-primary-dark & { color: #000; }
+  .btn-disabled & { color: #555; }
+  .btn-checked & { color: #4ade80; }
+}

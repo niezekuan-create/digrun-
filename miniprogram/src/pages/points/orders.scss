@@ -1,0 +1,136 @@
+.orders-page {
+  min-height: 100vh;
+  background: #000;
+  padding-bottom: 120rpx;
+}
+
+.orders-header {
+  padding: 48rpx 40rpx 32rpx;
+  border-bottom: 1rpx solid #1a1a1a;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.back-btn {
+  padding: 8rpx 0;
+}
+
+.back-text {
+  font-size: 28rpx;
+  color: #888;
+}
+
+.page-title {
+  font-size: 40rpx;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 3px;
+}
+
+.loading {
+  height: 300rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-text {
+  font-size: 24rpx;
+  color: #444;
+  letter-spacing: 4px;
+}
+
+.empty {
+  padding: 120rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.empty-title {
+  font-size: 36rpx;
+  font-weight: 900;
+  color: #333;
+  letter-spacing: 3px;
+}
+
+.empty-sub {
+  font-size: 22rpx;
+  color: #444;
+}
+
+.go-mall-btn {
+  margin-top: 20rpx;
+  background: #fff;
+  border-radius: 8rpx;
+  padding: 20rpx 48rpx;
+}
+
+.go-mall-text {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #000;
+}
+
+.orders-scroll {
+  height: calc(100vh - 160rpx);
+  padding: 24rpx 40rpx;
+}
+
+.order-card {
+  background: #111;
+  border-radius: 16rpx;
+  padding: 28rpx 24rpx;
+  margin-bottom: 16rpx;
+  border: 1rpx solid #1a1a1a;
+}
+
+.order-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.order-product {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #fff;
+  flex: 1;
+}
+
+.order-status {
+  padding: 6rpx 16rpx;
+  border-radius: 4rpx;
+
+  &.status-pending { background: #222; }
+  &.status-done { background: #1a2a1a; }
+  &.status-cancel { background: #2a1a1a; }
+}
+
+.order-status-text {
+  font-size: 20rpx;
+  font-weight: 600;
+
+  .status-pending & { color: #888; }
+  .status-done & { color: #4a4; }
+  .status-cancel & { color: #844; }
+}
+
+.order-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.order-cost {
+  font-size: 24rpx;
+  color: #555;
+}
+
+.order-date {
+  font-size: 22rpx;
+  color: #444;
+}

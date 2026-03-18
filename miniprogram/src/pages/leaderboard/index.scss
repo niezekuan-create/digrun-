@@ -1,0 +1,161 @@
+.leaderboard-page {
+  min-height: 100vh;
+  background: #000;
+  padding-bottom: 120rpx;
+}
+
+.page-header {
+  padding: 48rpx 40rpx 32rpx;
+  border-bottom: 1rpx solid #1a1a1a;
+}
+
+.header-title {
+  display: block;
+  font-size: 56rpx;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 6px;
+}
+
+.header-sub {
+  display: block;
+  font-size: 22rpx;
+  color: #555;
+  letter-spacing: 4px;
+  margin-top: 4rpx;
+}
+
+.loading, .empty {
+  height: 300rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-text, .empty-text {
+  font-size: 24rpx;
+  color: #444;
+  letter-spacing: 4px;
+}
+
+.my-rank-bar {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 24rpx 40rpx;
+  background: #111;
+  border-bottom: 1rpx solid #1a1a1a;
+}
+
+.my-rank-label {
+  font-size: 22rpx;
+  color: #555;
+  letter-spacing: 2px;
+  flex: 1;
+}
+
+.my-rank-num {
+  font-size: 36rpx;
+  font-weight: 900;
+  color: #fff;
+}
+
+.my-rank-count {
+  font-size: 22rpx;
+  color: #888;
+  letter-spacing: 1px;
+}
+
+.leader-list {
+  height: calc(100vh - 280rpx);
+  padding: 0 40rpx;
+}
+
+.leader-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #111;
+
+  &.is-me {
+    background: #111;
+    margin: 0 -40rpx;
+    padding: 24rpx 40rpx;
+  }
+}
+
+.rank-badge {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  &.rank-1 { background: #2a2200; }
+  &.rank-2 { background: #222; }
+  &.rank-3 { background: #1a1500; }
+}
+
+.rank-text {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #666;
+
+  .rank-1 & { color: #ffd700; }
+  .rank-2 & { color: #c0c0c0; }
+  .rank-3 & { color: #cd7f32; }
+}
+
+.leader-avatar {
+  flex-shrink: 0;
+}
+
+.avatar-img {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+}
+
+.avatar-placeholder {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: #222;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-initial {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #888;
+}
+
+.leader-name {
+  flex: 1;
+  font-size: 28rpx;
+  color: #fff;
+  font-weight: 500;
+}
+
+.leader-count-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 4rpx;
+}
+
+.leader-count {
+  font-size: 40rpx;
+  font-weight: 900;
+  color: #fff;
+}
+
+.leader-count-label {
+  font-size: 22rpx;
+  color: #555;
+}

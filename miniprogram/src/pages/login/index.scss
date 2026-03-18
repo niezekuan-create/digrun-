@@ -1,0 +1,113 @@
+// ── Page container ──────────────────────────────────────────
+.splash-page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #000;
+}
+
+// ── Background image ─────────────────────────────────────────
+.splash-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+// ── Dark overlay ─────────────────────────────────────────────
+.splash-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.38);
+  z-index: 1;
+}
+
+// ── Content layer ────────────────────────────────────────────
+.splash-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: calc(64rpx + env(safe-area-inset-bottom));
+}
+
+// ── Logo ─────────────────────────────────────────────────────
+.logo-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.splash-logo {
+  width: 94vw;
+  height: 34vw;
+  filter: invert(1);
+  animation: logo-reveal 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+// Logo 从左到右扫光揭示，循环
+@keyframes logo-reveal {
+  0%   { clip-path: inset(0 100% 0 0); opacity: 0.6; }
+  55%  { clip-path: inset(0 0% 0 0);   opacity: 1; }
+  80%  { clip-path: inset(0 0% 0 0);   opacity: 1; }
+  100% { clip-path: inset(0 0% 0 0);   opacity: 1; }
+}
+
+// ── Bottom area ──────────────────────────────────────────────
+.splash-bottom {
+  width: 100%;
+  padding: 0 48rpx;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 24rpx;
+}
+
+.splash-btn {
+  height: 96rpx;
+  background: #fff;
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: btn-rise 0.6s 0.6s ease forwards;
+
+  &.loading {
+    background: rgba(255, 255, 255, 0.6);
+  }
+}
+
+@keyframes btn-rise {
+  from { transform: translateY(16rpx); }
+  to   { transform: translateY(0); }
+}
+
+.splash-btn-text {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #000;
+  letter-spacing: 3px;
+}
+
+.splash-hint {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 1px;
+  text-align: center;
+  animation: btn-rise 0.6s 0.8s ease forwards;
+}

@@ -1,0 +1,148 @@
+.podcast-page {
+  min-height: 100vh;
+  background: #000;
+  padding-bottom: 120rpx;
+}
+
+.page-header {
+  padding: 48rpx 40rpx 32rpx;
+  border-bottom: 1rpx solid #1a1a1a;
+}
+
+.header-title {
+  display: block;
+  font-size: 56rpx;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 6px;
+}
+
+.header-sub {
+  display: block;
+  font-size: 22rpx;
+  color: #555;
+  letter-spacing: 2px;
+  margin-top: 4rpx;
+}
+
+.loading {
+  height: 300rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-text {
+  font-size: 24rpx;
+  color: #444;
+  letter-spacing: 4px;
+}
+
+.empty {
+  height: 50vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  padding: 0 60rpx;
+}
+
+.empty-title {
+  font-size: 40rpx;
+  font-weight: 900;
+  color: #333;
+  letter-spacing: 4px;
+}
+
+.empty-sub {
+  font-size: 24rpx;
+  color: #444;
+  text-align: center;
+  letter-spacing: 1px;
+  line-height: 1.6;
+}
+
+.podcast-list {
+  height: calc(100vh - 200rpx);
+}
+
+.podcast-card {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 32rpx 40rpx;
+  border-bottom: 1rpx solid #111;
+}
+
+.episode-num {
+  width: 80rpx;
+  flex-shrink: 0;
+}
+
+.ep-text {
+  font-size: 22rpx;
+  font-weight: 900;
+  color: #444;
+  letter-spacing: 1px;
+}
+
+.podcast-info {
+  flex: 1;
+  overflow: hidden;
+}
+
+.podcast-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 8rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.podcast-desc {
+  display: block;
+  font-size: 22rpx;
+  color: #555;
+  margin-bottom: 10rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.podcast-meta {
+  display: flex;
+  gap: 16rpx;
+  align-items: center;
+}
+
+.meta-date {
+  font-size: 20rpx;
+  color: #444;
+  letter-spacing: 2px;
+}
+
+.meta-dur {
+  font-size: 20rpx;
+  color: #444;
+}
+
+.play-btn {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  border: 2rpx solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.play-icon {
+  font-size: 22rpx;
+  color: #fff;
+  margin-left: 4rpx;
+}

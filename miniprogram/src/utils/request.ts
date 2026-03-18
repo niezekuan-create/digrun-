@@ -1,0 +1,58 @@
+import Taro from '@tarojs/taro';
+
+const BASE_URL = 'http://192.168.28.172:3001';
+
+export function getToken(): string {
+  return Taro.getStorageSync('token') || '';
+}
+
+export function setToken(token: string) {
+  Taro.setStorageSync('token', token);
+}
+
+export function clearToken() {
+  Taro.removeStorageSync('token');
+  Taro.removeStorageSync('userInfo');
+}
+
+interface RequestOptions {
+  url: string;
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  data?: any;
+  auth?: boolean;
+}
+
+export function request<T = any>(options: RequestOptions): Promise<T> {
+  const { url, method = 'GET', data, auth = true } = options;
+  const token = getToken();
+  const header: any = { 'Content-Type': 'application/json' };
+  if (auth && token) {
+    header['Authorization'] = `Bearer ${token}`;
+  }
+
+  return new Promise((resolve, reject) => {
+    Taro.request({
+      url: `${BASE_URL}${url}`,
+      method,
+      data,
+      header,
+      success: (res) => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(res.data as T);
+        } else if (res.statusCode === 401) {
+          clearToken();
+          Taro.reLaunch({ url: '/pages/login/index' });
+          reject(new Error('Unauthorized'));
+        } else {
+          const msg = (res.data as any)?.message || '请求失败';
+          Taro.showToast({ title: Array.isArray(msg) ? msg[0] : msg, icon: 'none' });
+          reject(new Error(msg));
+        }
+      },
+      fail: (err) => {
+        Taro.showToast({ title: '网络错误，请检查连接', icon: 'none' });
+        reject(err);
+      },
+    });
+  });
+}

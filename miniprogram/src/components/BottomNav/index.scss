@@ -1,0 +1,41 @@
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 110rpx;
+  background: #0a0a0a;
+  border-top: 1rpx solid #222;
+  display: flex;
+  align-items: center;
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 999;
+}
+
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6rpx;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+
+  &.active {
+    opacity: 1;
+  }
+}
+
+.nav-icon-text {
+  font-size: 36rpx;
+  color: #fff;
+  line-height: 1;
+}
+
+.nav-label {
+  font-size: 20rpx;
+  color: #fff;
+  letter-spacing: 1px;
+  font-weight: 600;
+}

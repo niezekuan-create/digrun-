@@ -1,0 +1,141 @@
+.checkin-page {
+  min-height: 100vh;
+  background: #000;
+}
+
+.checkin-loading {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.loading-text {
+  font-size: 24rpx;
+  color: #444;
+  letter-spacing: 4px;
+}
+
+.checkin-header {
+  padding: 48rpx 40rpx 32rpx;
+  border-bottom: 1rpx solid #1a1a1a;
+}
+
+.checkin-title {
+  display: block;
+  font-size: 22rpx;
+  color: #555;
+  letter-spacing: 4px;
+  margin-bottom: 12rpx;
+  font-weight: 600;
+}
+
+.checkin-event {
+  display: block;
+  font-size: 40rpx;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 2px;
+  margin-bottom: 8rpx;
+}
+
+.checkin-date {
+  display: block;
+  font-size: 24rpx;
+  color: #666;
+  letter-spacing: 3px;
+}
+
+.qr-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 64rpx 40rpx;
+}
+
+.qr-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32rpx;
+}
+
+.qr-image {
+  width: 440rpx;
+  height: 440rpx;
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 16rpx;
+}
+
+.qr-hint {
+  font-size: 24rpx;
+  color: #555;
+  letter-spacing: 2px;
+  text-align: center;
+}
+
+.checked-in-box {
+  width: 440rpx;
+  height: 440rpx;
+  background: #1a3a1a;
+  border-radius: 16rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+}
+
+.checked-icon {
+  font-size: 96rpx;
+  color: #4ade80;
+}
+
+.checked-text {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #4ade80;
+  letter-spacing: 4px;
+}
+
+.checkin-info {
+  padding: 0 40rpx 40rpx;
+  background: #111;
+  margin: 0 40rpx;
+  border-radius: 16rpx;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #1a1a1a;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.info-label {
+  font-size: 24rpx;
+  color: #555;
+  letter-spacing: 2px;
+}
+
+.info-value {
+  font-size: 28rpx;
+  color: #fff;
+  font-weight: 500;
+}
+
+.info-status {
+  font-size: 24rpx;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.status-checked { color: #4ade80; }
+.status-pending { color: #888; }

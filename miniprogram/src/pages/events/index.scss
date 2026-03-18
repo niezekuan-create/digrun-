@@ -1,0 +1,211 @@
+.events-page {
+  min-height: 100vh;
+  background: #000;
+  padding-bottom: 120rpx;
+}
+
+.page-header {
+  padding: 48rpx 40rpx 32rpx;
+  border-bottom: 1rpx solid #1a1a1a;
+}
+
+.header-title {
+  display: block;
+  font-size: 56rpx;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 6px;
+}
+
+.header-sub {
+  display: block;
+  font-size: 22rpx;
+  color: #555;
+  letter-spacing: 4px;
+  margin-top: 4rpx;
+}
+
+.loading, .empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300rpx;
+}
+
+.loading-text, .empty-text {
+  font-size: 24rpx;
+  color: #444;
+  letter-spacing: 4px;
+}
+
+.events-list {
+  padding-bottom: 40rpx;
+}
+
+.section-header {
+  padding: 32rpx 40rpx 12rpx;
+}
+
+.section-past {
+  margin-top: 8rpx;
+  border-top: 1rpx solid #1a1a1a;
+}
+
+.section-label {
+  font-size: 22rpx;
+  color: #555;
+  letter-spacing: 3px;
+  font-weight: 600;
+}
+
+.event-card {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 36rpx 40rpx;
+  border-bottom: 1rpx solid #1a1a1a;
+}
+
+.event-date-block {
+  min-width: 88rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.event-month-day {
+  font-size: 36rpx;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 1px;
+}
+
+.event-weekday {
+  font-size: 20rpx;
+  color: #555;
+  letter-spacing: 2px;
+  margin-top: 4rpx;
+}
+
+.event-info {
+  flex: 1;
+  overflow: hidden;
+}
+
+.event-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 1px;
+  margin-bottom: 8rpx;
+}
+
+.event-location {
+  display: block;
+  font-size: 22rpx;
+  color: #777;
+  margin-bottom: 6rpx;
+}
+
+.event-route {
+  display: block;
+  font-size: 22rpx;
+  color: #555;
+}
+
+.event-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8rpx;
+}
+
+.event-status {
+  padding: 6rpx 16rpx;
+  border-radius: 4rpx;
+
+  &.open {
+    background: #fff;
+  }
+
+  &.full {
+    background: #333;
+  }
+
+  &.ended {
+    background: #1a1a1a;
+    border: 1rpx solid #333;
+  }
+}
+
+.event-status-text {
+  font-size: 18rpx;
+  font-weight: 800;
+  letter-spacing: 2px;
+
+  .open & { color: #000; }
+  .full & { color: #666; }
+  .ended & { color: #555; }
+}
+
+.event-card.ended,
+.event-card-cover.ended {
+  opacity: 0.6;
+}
+
+.event-count {
+  font-size: 22rpx;
+  color: #555;
+}
+
+// ── Cover card (full-bleed) ──
+.event-card-cover {
+  margin-bottom: 2rpx;
+  background: #111;
+}
+
+.event-cover-wrap {
+  width: 100%;
+  position: relative;
+  // 3:4 ratio via padding-bottom (works in WXSS)
+  padding-bottom: 133.33%;
+  overflow: hidden;
+}
+
+.event-cover-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.event-cover-overlay {
+  position: absolute;
+  top: 24rpx;
+  right: 24rpx;
+}
+
+.event-cover-info {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx 40rpx;
+  border-bottom: 1rpx solid #1a1a1a;
+}
+
+.event-cover-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 80rpx;
+  border-right: 1rpx solid #222;
+  padding-right: 24rpx;
+  flex-shrink: 0;
+}
+
+.event-cover-text {
+  flex: 1;
+  overflow: hidden;
+}

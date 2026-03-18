@@ -1,0 +1,327 @@
+.my-page {
+  min-height: 100vh;
+  background: #000;
+  padding-bottom: 120rpx;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 48rpx 40rpx 36rpx;
+  border-bottom: 1rpx solid #1a1a1a;
+}
+
+.avatar-wrap {
+  flex-shrink: 0;
+}
+
+.avatar {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+}
+
+.avatar-placeholder {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  background: #222;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2rpx solid #333;
+}
+
+.avatar-text {
+  font-size: 40rpx;
+  font-weight: 900;
+  color: #fff;
+}
+
+.profile-info {
+  flex: 1;
+}
+
+.profile-name {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 16rpx;
+}
+
+.profile-stats {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.stat-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6rpx;
+}
+
+.stat-num {
+  font-size: 36rpx;
+  font-weight: 900;
+  color: #fff;
+}
+
+.stat-label {
+  font-size: 22rpx;
+  color: #555;
+}
+
+.stat-divider {
+  width: 1rpx;
+  height: 32rpx;
+  background: #333;
+}
+
+.header-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+  align-items: flex-end;
+}
+
+.admin-btn {
+  padding: 10rpx 20rpx;
+  background: #fff;
+  border-radius: 6rpx;
+}
+
+.admin-btn-text {
+  font-size: 20rpx;
+  font-weight: 800;
+  color: #000;
+  letter-spacing: 2px;
+}
+
+.logout-btn {
+  padding: 10rpx 20rpx;
+  border: 1rpx solid #333;
+  border-radius: 6rpx;
+}
+
+.logout-text {
+  font-size: 20rpx;
+  color: #666;
+  letter-spacing: 2px;
+}
+
+.points-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 24rpx 40rpx;
+  background: #111;
+  border: 1rpx solid #222;
+  border-radius: 12rpx;
+  padding: 24rpx 28rpx;
+}
+
+.points-entry-left {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.points-entry-icon {
+  font-size: 32rpx;
+  color: #888;
+}
+
+.points-entry-label {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #ccc;
+}
+
+.points-entry-right {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+}
+
+.points-entry-num {
+  font-size: 40rpx;
+  font-weight: 900;
+  color: #fff;
+}
+
+.points-entry-arrow {
+  font-size: 24rpx;
+  color: #555;
+}
+
+.section-header {
+  padding: 32rpx 40rpx 16rpx;
+}
+
+.section-title {
+  font-size: 24rpx;
+  color: #555;
+  letter-spacing: 3px;
+  font-weight: 600;
+}
+
+.loading, .empty {
+  height: 300rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32rpx;
+}
+
+.loading-text, .empty-text {
+  font-size: 24rpx;
+  color: #444;
+  letter-spacing: 4px;
+}
+
+.go-events-btn {
+  padding: 16rpx 40rpx;
+  border: 1rpx solid #333;
+  border-radius: 8rpx;
+}
+
+.go-events-text {
+  font-size: 26rpx;
+  color: #888;
+  letter-spacing: 2px;
+}
+
+.regs-content {
+  display: block;
+}
+
+.regs-list {
+  padding: 0 40rpx;
+  padding-bottom: 120rpx;
+}
+
+.reg-card {
+  background: #111;
+  border-radius: 16rpx;
+  padding: 28rpx;
+  margin-bottom: 20rpx;
+  overflow: hidden;
+}
+
+.reg-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.reg-event-info {
+  flex: 1;
+  min-width: 0; // allow flex child to shrink below content size
+  overflow: hidden;
+}
+
+.reg-event-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 8rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reg-event-date {
+  display: block;
+  font-size: 22rpx;
+  color: #666;
+  margin-bottom: 4rpx;
+  letter-spacing: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reg-event-loc {
+  display: block;
+  font-size: 22rpx;
+  color: #555;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reg-status {
+  padding: 6rpx 16rpx;
+  border-radius: 4rpx;
+  flex-shrink: 0;
+}
+
+.status-pending  { background: #2a2a1a; }
+.status-open     { background: #1a2a1a; }
+.status-checkin  { background: #1a3a1a; }
+.status-cancel   { background: #2a1a1a; }
+
+.reg-status-text {
+  font-size: 20rpx;
+  font-weight: 700;
+  letter-spacing: 1px;
+
+  .status-pending &  { color: #d4a017; }
+  .status-open &     { color: #4ade80; }
+  .status-checkin &  { color: #4ade80; }
+  .status-cancel &   { color: #f87171; }
+}
+
+.reg-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-bottom: 16rpx;
+}
+
+.reg-tag {
+  font-size: 20rpx;
+  color: #666;
+  background: #1a1a1a;
+  padding: 4rpx 14rpx;
+  border-radius: 4rpx;
+  letter-spacing: 1px;
+}
+
+.reg-actions {
+  padding-top: 16rpx;
+  border-top: 1rpx solid #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.reg-action {
+  flex: 1;
+}
+
+.reg-action-text {
+  font-size: 24rpx;
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.reg-cancel-btn {
+  padding: 8rpx 20rpx;
+  border: 1rpx solid #333;
+  border-radius: 6rpx;
+}
+
+.reg-cancel-text {
+  font-size: 22rpx;
+  color: #888;
+  letter-spacing: 1px;
+}
