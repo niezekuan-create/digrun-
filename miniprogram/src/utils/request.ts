@@ -1,7 +1,11 @@
 import Taro from '@tarojs/taro';
 
 // 统一配置 API 地址 — 其他页面从这里 import BASE_URL，不要各自硬编码
-export const BASE_URL = 'http://192.168.1.5:3001';
+// API_BASE_URL 由 config/prod.js 和 config/dev.js 中的 defineConstants 在编译时注入。
+// 生产构建：https://api.digrunningclub.com（需替换为实际已备案域名）
+// 开发构建：http://192.168.1.5:3001
+declare const API_BASE_URL: string;
+export const BASE_URL: string = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'http://192.168.1.5:3001';
 
 export function getToken(): string {
   return Taro.getStorageSync('token') || '';

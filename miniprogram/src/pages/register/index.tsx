@@ -70,7 +70,11 @@ export default function RegisterPage() {
       })
       Taro.showToast({ title: '报名成功！', icon: 'success' })
       setTimeout(() => Taro.navigateBack(), 1500)
-    } catch (e) {
+    } catch (e: any) {
+      // request util already shows a toast for HTTP errors; show fallback for unexpected ones
+      if (!e?.message || e.message === 'Network Error') {
+        Taro.showToast({ title: '报名失败，请重试', icon: 'none' })
+      }
     } finally {
       setSubmitting(false)
     }

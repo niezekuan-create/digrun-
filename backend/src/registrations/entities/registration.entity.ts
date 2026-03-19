@@ -1,8 +1,14 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Event } from '../../events/entities/event.entity';
 
+// Unique index prevents the same user registering for the same event more than once
+// at the DB level, covering non-cancelled/non-rejected records via partial index.
+// The partial index is managed by a migration; here we keep a composite index for fast lookups.
 @Entity()
+@Index('UQ_registration_user_event_active', ['user_id', 'event_id'], {
+  unique: false, // enforced in service with Not(In(['cancelled','rejected'])); DB partial unique index below
+})
 export class Registration {
   @PrimaryGeneratedColumn()
   id: number;

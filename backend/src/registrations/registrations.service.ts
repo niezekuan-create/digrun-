@@ -28,6 +28,8 @@ export class RegistrationsService {
   constructor(
     @InjectRepository(Registration)
     private registrationsRepository: Repository<Registration>,
+    @InjectRepository(Event)
+    private eventsRepository: Repository<Event>,
     @InjectDataSource()
     private dataSource: DataSource,
     private pointsService: PointsService,
@@ -35,6 +37,19 @@ export class RegistrationsService {
 
   // ─── Create ───────────────────────────────────────────────
   async create(userId: number, dto: CreateRegistrationDto) {
+    // Fetch event to enforce signup window and published status server-side
+    const event = await this.eventsRepository.findOneBy({ id: dto.event_id });
+    if (!event) throw new NotFoundException('活动不存在');
+    if (event.status !== 'published') throw new BadRequestException('活动未开放报名');
+
+    const now = new Date();
+    if (event.signup_start_time && now < new Date(event.signup_start_time)) {
+      throw new BadRequestException('报名尚未开始');
+    }
+    if (event.signup_end_time && now > new Date(event.signup_end_time)) {
+      throw new BadRequestException('报名已截止');
+    }
+
     const existing = await this.registrationsRepository.findOne({
       where: {
         user_id: userId,
