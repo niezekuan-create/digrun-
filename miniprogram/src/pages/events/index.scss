@@ -42,8 +42,78 @@
   padding-bottom: 40rpx;
 }
 
+// ── Tab 分栏 ──
+.events-tabs {
+  display: flex;
+  border-bottom: 1rpx solid #1a1a1a;
+}
+
+.events-tab-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  padding: 28rpx 0 24rpx;
+  position: relative;
+
+  &.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 20%;
+    right: 20%;
+    height: 3rpx;
+    background: #fff;
+    border-radius: 2rpx;
+  }
+}
+
+.events-tab-text {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #555;
+  letter-spacing: 1px;
+
+  .active & {
+    color: #fff;
+    font-weight: 800;
+  }
+}
+
+.events-tab-count {
+  font-size: 20rpx;
+  color: #555;
+  background: #1a1a1a;
+  border-radius: 20rpx;
+  padding: 2rpx 12rpx;
+  min-width: 32rpx;
+  text-align: center;
+
+  .active & {
+    color: #fff;
+    background: #2a2a2a;
+  }
+}
+
+// ── Tab 空状态 ──
+.tab-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 320rpx;
+}
+
+.tab-empty-text {
+  font-size: 26rpx;
+  color: #444;
+  letter-spacing: 2px;
+}
+
 .section-header {
-  padding: 32rpx 40rpx 12rpx;
+  padding: 36rpx 40rpx 16rpx;
+  display: flex;
+  align-items: baseline;
 }
 
 .section-past {
@@ -51,76 +121,97 @@
   border-top: 1rpx solid #1a1a1a;
 }
 
-.section-label {
+.section-label-main {
+  font-size: 28rpx;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 4px;
+}
+
+.section-count {
+  font-size: 20rpx;
+  color: #555;
+  margin-left: 12rpx;
+}
+
+// ── Unified event card (poster + info separated) ──
+.event-card-unified {
+  width: 100%;
+  margin-bottom: 40rpx;
+
+  &.ended {
+    opacity: 0.6;
+  }
+}
+
+// 海报区（纯视觉，无文字遮罩）
+.event-card-inner {
+  position: relative;
+  width: 100%;
+  padding-top: 133.33%; // 3:4 ratio
+  overflow: hidden;
+  background: #111;
+}
+
+.event-card-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.event-card-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1c1c1c 0%, #0d0d0d 100%);
+}
+
+// 角标 — 绝对定位在海报右上角
+.event-badge-row {
+  position: absolute;
+  top: 20rpx;
+  right: 20rpx;
+}
+
+// 信息区 — 海报下方独立
+.event-card-info {
+  padding: 28rpx 32rpx 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.event-card-date {
   font-size: 22rpx;
   color: #555;
   letter-spacing: 3px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
-.event-card {
-  display: flex;
-  align-items: center;
-  gap: 24rpx;
-  padding: 36rpx 40rpx;
-  border-bottom: 1rpx solid #1a1a1a;
-}
-
-.event-date-block {
-  min-width: 88rpx;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.event-month-day {
-  font-size: 36rpx;
+.event-card-title {
+  font-size: 38rpx;
   font-weight: 900;
   color: #fff;
   letter-spacing: 1px;
+  line-height: 1.25;
 }
 
-.event-weekday {
-  font-size: 20rpx;
-  color: #555;
-  letter-spacing: 2px;
-  margin-top: 4rpx;
+.event-card-loc {
+  font-size: 24rpx;
+  color: #666;
+  letter-spacing: 0;
 }
 
-.event-info {
-  flex: 1;
-  overflow: hidden;
-}
-
-.event-title {
-  display: block;
-  font-size: 30rpx;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: 1px;
-  margin-bottom: 8rpx;
-}
-
-.event-location {
-  display: block;
+.event-card-count {
   font-size: 22rpx;
-  color: #777;
-  margin-bottom: 6rpx;
+  color: #444;
 }
 
-.event-route {
-  display: block;
-  font-size: 22rpx;
-  color: #555;
-}
-
-.event-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8rpx;
-}
-
+// ── Status badge (shared) ──
 .event-status {
   padding: 6rpx 16rpx;
   border-radius: 4rpx;
@@ -130,12 +221,12 @@
   }
 
   &.full {
-    background: #333;
+    background: rgba(51,51,51,0.9);
   }
 
   &.ended {
-    background: #1a1a1a;
-    border: 1rpx solid #333;
+    background: rgba(26,26,26,0.85);
+    border: 1rpx solid rgba(255,255,255,0.15);
   }
 }
 
@@ -145,67 +236,6 @@
   letter-spacing: 2px;
 
   .open & { color: #000; }
-  .full & { color: #666; }
-  .ended & { color: #555; }
-}
-
-.event-card.ended,
-.event-card-cover.ended {
-  opacity: 0.6;
-}
-
-.event-count {
-  font-size: 22rpx;
-  color: #555;
-}
-
-// ── Cover card (full-bleed) ──
-.event-card-cover {
-  margin-bottom: 2rpx;
-  background: #111;
-}
-
-.event-cover-wrap {
-  width: 100%;
-  position: relative;
-  // 3:4 ratio via padding-bottom (works in WXSS)
-  padding-bottom: 133.33%;
-  overflow: hidden;
-}
-
-.event-cover-img {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.event-cover-overlay {
-  position: absolute;
-  top: 24rpx;
-  right: 24rpx;
-}
-
-.event-cover-info {
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-  padding: 24rpx 40rpx;
-  border-bottom: 1rpx solid #1a1a1a;
-}
-
-.event-cover-date {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 80rpx;
-  border-right: 1rpx solid #222;
-  padding-right: 24rpx;
-  flex-shrink: 0;
-}
-
-.event-cover-text {
-  flex: 1;
-  overflow: hidden;
+  .full & { color: #888; }
+  .ended & { color: #666; }
 }

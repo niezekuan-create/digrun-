@@ -1,10 +1,18 @@
 import {
   Controller, Get, Post, Body, Patch, Param, Delete, UseGuards,
-  UseInterceptors, UploadedFile,
+  UseInterceptors, UploadedFile, BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+
+const imageFileFilter = (req: any, file: Express.Multer.File, cb: Function) => {
+  const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  if (!allowed.includes(file.mimetype)) {
+    return cb(new BadRequestException('仅允许上传 jpg / png / webp / gif 图片'), false);
+  }
+  cb(null, true);
+};
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -27,6 +35,7 @@ export class EventsController {
         },
       }),
       limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: imageFileFilter,
     }),
   )
   uploadCover(@UploadedFile() file: Express.Multer.File) {
@@ -54,6 +63,12 @@ export class EventsController {
   @Patch(':id/toggle-active')
   toggleActive(@Param('id') id: string) {
     return this.eventsService.toggleActive(+id);
+  }
+
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @Patch(':id/offline')
+  setOffline(@Param('id') id: string) {
+    return this.eventsService.setOffline(+id);
   }
 
   @Get(':id')

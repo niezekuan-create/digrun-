@@ -1,6 +1,7 @@
 import Taro from '@tarojs/taro';
 
-const BASE_URL = 'http://192.168.28.172:3001';
+// 统一配置 API 地址 — 其他页面从这里 import BASE_URL，不要各自硬编码
+export const BASE_URL = 'http://192.168.1.5:3001';
 
 export function getToken(): string {
   return Taro.getStorageSync('token') || '';

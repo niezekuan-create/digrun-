@@ -1,7 +1,15 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, Request, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, Request, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+
+const imageFileFilter = (req: any, file: Express.Multer.File, cb: Function) => {
+  const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  if (!allowed.includes(file.mimetype)) {
+    return cb(new BadRequestException('仅允许上传 jpg / png / webp / gif 图片'), false);
+  }
+  cb(null, true);
+};
 import { PointsService } from './points.service';
 import { CreateProductDto, UpdateProductDto, UpdateOrderStatusDto } from './dto/points.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -63,6 +71,7 @@ export class PointsController {
         },
       }),
       limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: imageFileFilter,
     }),
   )
   uploadProductImage(@UploadedFile() file: Express.Multer.File) {

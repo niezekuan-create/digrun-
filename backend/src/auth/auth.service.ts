@@ -18,6 +18,9 @@ export class AuthService {
 
     // Dev mode: skip WeChat API when credentials are not configured
     if (!appid || !secret || appid === 'YOUR_APPID') {
+      if (process.env.NODE_ENV === 'production') {
+        throw new UnauthorizedException('WeChat credentials not configured for production');
+      }
       // Use stable device_id if provided, otherwise fall back to code prefix
       openid = deviceId ? `dev_${deviceId}` : `dev_${code.slice(0, 16)}`;
     } else {

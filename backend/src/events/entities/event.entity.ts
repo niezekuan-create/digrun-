@@ -12,6 +12,21 @@ export class Event {
   @Column()
   date: Date;
 
+  @Column({ nullable: true })
+  end_date: Date;
+
+  @Column({ nullable: true })
+  signup_start_time: Date;
+
+  @Column({ nullable: true })
+  signup_end_time: Date;
+
+  @Column({ nullable: true })
+  event_start_time: Date;
+
+  @Column({ nullable: true })
+  event_end_time: Date;
+
   @Column()
   location: string;
 

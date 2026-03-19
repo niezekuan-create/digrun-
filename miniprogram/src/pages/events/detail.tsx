@@ -14,6 +14,11 @@ interface Event {
   route: string
   description: string
   max_people: number
+  status?: string
+  event_start_time?: string
+  event_end_time?: string
+  signup_start_time?: string
+  signup_end_time?: string
 }
 
 interface Registration {
@@ -70,6 +75,12 @@ export default function EventDetailPage() {
     return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`
   }
 
+  const formatTimeRange = (start?: string, end?: string) => {
+    if (!start) return ''
+    const hm = (iso: string) => iso.slice(11, 16)
+    return end ? `${hm(start)} - ${hm(end)}` : hm(start)
+  }
+
   if (loading) {
     return (
       <View className='detail-loading'>
@@ -86,12 +97,24 @@ export default function EventDetailPage() {
     )
   }
 
-  const isEnded = new Date(event.date) < new Date()
+  const now = new Date()
+  const isOffline = event.status === 'offline' || event.status === 'deleted'
+  const isEnded = new Date(event.event_start_time || event.date) < now
   const isFull = regCount >= event.max_people
   const isPending = myReg?.status === 'pending'
   const isApproved = myReg?.status === 'approved'
   const isCheckedIn = myReg?.status === 'checked_in'
   const isRejected = myReg?.status === 'rejected'
+
+  // Signup window logic
+  const signupNotStarted = event.signup_start_time ? now < new Date(event.signup_start_time) : false
+  const signupClosed = event.signup_end_time ? now > new Date(event.signup_end_time) : false
+  const signupOpen = !signupNotStarted && !signupClosed
+
+  const timeRange = formatTimeRange(event.event_start_time, event.event_end_time)
+  const signupRange = event.signup_start_time
+    ? `${formatTimeRange(event.signup_start_time)} ~ ${event.signup_end_time ? formatTimeRange(event.signup_end_time) : '—'} 截止`
+    : ''
 
   return (
     <View className='detail-page'>
@@ -100,7 +123,11 @@ export default function EventDetailPage() {
           <Text className='detail-date'>{formatDate(event.date)}</Text>
           <Text className='detail-title'>{event.title}</Text>
           <View className='detail-badges'>
-            {isEnded ? (
+            {isOffline ? (
+              <View className='badge badge-grey'>
+                <Text className='badge-text'>已取消</Text>
+              </View>
+            ) : isEnded ? (
               <View className='badge badge-grey'>
                 <Text className='badge-text'>已结束</Text>
               </View>
@@ -116,6 +143,24 @@ export default function EventDetailPage() {
         </View>
 
         <View className='detail-body'>
+          {timeRange ? (
+            <>
+              <View className='info-row'>
+                <Text className='info-label'>活动时间</Text>
+                <Text className='info-value'>{formatDate(event.event_start_time || event.date)} {timeRange}</Text>
+              </View>
+              <View className='divider' />
+            </>
+          ) : null}
+          {signupRange ? (
+            <>
+              <View className='info-row'>
+                <Text className='info-label'>报名截止</Text>
+                <Text className={`info-value ${signupClosed ? 'info-value-dim' : ''}`}>{signupRange}</Text>
+              </View>
+              <View className='divider' />
+            </>
+          ) : null}
           <View className='info-row'>
             <Text className='info-label'>地点</Text>
             <Text className='info-value'>{event.location}</Text>
@@ -134,7 +179,11 @@ export default function EventDetailPage() {
       </ScrollView>
 
       <View className='detail-footer'>
-        {isEnded ? (
+        {isOffline ? (
+          <View className='btn-disabled'>
+            <Text className='btn-text'>活动已取消</Text>
+          </View>
+        ) : isEnded ? (
           isCheckedIn ? (
             <View className='btn-checked'>
               <Text className='btn-text'>✓ 已签到</Text>
@@ -165,6 +214,14 @@ export default function EventDetailPage() {
         ) : isFull ? (
           <View className='btn-disabled'>
             <Text className='btn-text'>名额已满</Text>
+          </View>
+        ) : signupNotStarted ? (
+          <View className='btn-disabled'>
+            <Text className='btn-text'>报名未开始</Text>
+          </View>
+        ) : signupClosed ? (
+          <View className='btn-disabled'>
+            <Text className='btn-text'>报名已截止</Text>
           </View>
         ) : (
           <View className='btn-primary-dark' onClick={handleRegister}>

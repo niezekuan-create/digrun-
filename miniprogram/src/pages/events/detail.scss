@@ -105,6 +105,10 @@ page {
   font-weight: 500;
   text-align: right;
   flex: 1;
+
+  &.info-value-dim {
+    color: #555;
+  }
 }
 
 .info-desc {

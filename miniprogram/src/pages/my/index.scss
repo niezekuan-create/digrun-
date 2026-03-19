@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   gap: 24rpx;
-  padding: 48rpx 40rpx 36rpx;
+  padding: 56rpx 40rpx 40rpx;
   border-bottom: 1rpx solid #1a1a1a;
 }
 
@@ -17,14 +17,14 @@
 }
 
 .avatar {
-  width: 96rpx;
-  height: 96rpx;
+  width: 112rpx;
+  height: 112rpx;
   border-radius: 50%;
 }
 
 .avatar-placeholder {
-  width: 96rpx;
-  height: 96rpx;
+  width: 112rpx;
+  height: 112rpx;
   border-radius: 50%;
   background: #222;
   display: flex;
@@ -34,7 +34,7 @@
 }
 
 .avatar-text {
-  font-size: 40rpx;
+  font-size: 48rpx;
   font-weight: 900;
   color: #fff;
 }
@@ -45,10 +45,10 @@
 
 .profile-name {
   display: block;
-  font-size: 32rpx;
+  font-size: 36rpx;
   font-weight: 700;
   color: #fff;
-  margin-bottom: 16rpx;
+  margin-bottom: 20rpx;
 }
 
 .profile-stats {
@@ -64,7 +64,7 @@
 }
 
 .stat-num {
-  font-size: 36rpx;
+  font-size: 44rpx;
   font-weight: 900;
   color: #fff;
 }
@@ -119,8 +119,8 @@
   margin: 24rpx 40rpx;
   background: #111;
   border: 1rpx solid #222;
-  border-radius: 12rpx;
-  padding: 24rpx 28rpx;
+  border-radius: 16rpx;
+  padding: 28rpx 32rpx;
 }
 
 .points-entry-left {
@@ -147,7 +147,7 @@
 }
 
 .points-entry-num {
-  font-size: 40rpx;
+  font-size: 48rpx;
   font-weight: 900;
   color: #fff;
 }
@@ -158,14 +158,14 @@
 }
 
 .section-header {
-  padding: 32rpx 40rpx 16rpx;
+  padding: 36rpx 40rpx 20rpx;
 }
 
 .section-title {
-  font-size: 24rpx;
-  color: #555;
-  letter-spacing: 3px;
-  font-weight: 600;
+  font-size: 28rpx;
+  color: #fff;
+  letter-spacing: 4px;
+  font-weight: 800;
 }
 
 .loading, .empty {

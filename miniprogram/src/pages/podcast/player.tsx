@@ -2,10 +2,9 @@ import { View, Text, Slider } from '@tarojs/components'
 import { useLoad, useRouter, useUnload } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import { useState, useRef } from 'react'
-import { request } from '../../utils/request'
+import { request, BASE_URL } from '../../utils/request'
 import './player.scss'
 
-const BASE_URL = 'http://localhost:3001'
 
 interface Podcast {
   id: number

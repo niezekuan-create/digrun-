@@ -1,12 +1,11 @@
-import { View, Text, Input, Textarea, ScrollView, Image } from '@tarojs/components'
+import { View, Text, Input, Textarea, ScrollView, Image, Picker } from '@tarojs/components'
 import { useLoad } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import { useState } from 'react'
 import { request } from '../../utils/request'
-import { getToken } from '../../utils/request'
+import { getToken, BASE_URL } from '../../utils/request'
 import './index.scss'
 
-const BASE_URL = 'http://192.168.28.172:3001'
 
 type Tab = 'scan' | 'event' | 'podcast' | 'mall' | 'users'
 
@@ -21,8 +20,17 @@ interface CheckinResult {
   }
 }
 
-interface EventForm { title: string; date: string; location: string; route: string; description: string; max_people: string; cover_image: string }
-interface AdminEvent { id: number; title: string; date: string; is_active: boolean; status: string; registration_count?: number }
+interface EventForm {
+  title: string
+  signup_start: string; signup_end: string
+  event_start: string; event_end: string
+  location: string; route: string; description: string; max_people: string; cover_image: string
+}
+interface AdminEvent {
+  id: number; title: string; date: string; is_active: boolean; status: string; registration_count?: number
+  location?: string; route?: string; description?: string; max_people?: number; cover_image?: string; form_config?: any
+  signup_start_time?: string; signup_end_time?: string; event_start_time?: string; event_end_time?: string
+}
 interface PodcastForm { title: string; episode: string; description: string; cover_url: string }
 interface ProductForm { name: string; points_cost: string; stock: string; product_type: string; size_options: string }
 interface Product { id: number; name: string; points_cost: number; stock: number; status: string; product_type?: string; size_options?: string[] }
@@ -39,7 +47,19 @@ interface RegItem {
   event?: { title: string; id: number }
 }
 
-const EMPTY_EVENT: EventForm = { title: '', date: '', location: '', route: '', description: '', max_people: '30', cover_image: '' }
+const EMPTY_EVENT: EventForm = { title: '', signup_start: '', signup_end: '', event_start: '', event_end: '', location: '', route: '', description: '', max_people: '30', cover_image: '' }
+
+const getDatePart = (iso: string) => iso ? iso.slice(0, 10) : ''
+const getTimePart = (iso: string) => iso ? iso.slice(11, 16) : ''
+const combineDateTime = (date: string, time: string) => date && time ? `${date}T${time}:00` : ''
+const getDefaultDateTimes = () => {
+  const now = new Date()
+  const eventStart = new Date(now); eventStart.setDate(eventStart.getDate() + 1); eventStart.setHours(8, 0, 0, 0)
+  const eventEnd = new Date(eventStart); eventEnd.setHours(10, 0, 0, 0)
+  const signupEnd = new Date(eventStart); signupEnd.setHours(7, 30, 0, 0)
+  const iso = (d: Date) => `${d.toISOString().slice(0, 10)}T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:00`
+  return { signupStartIso: iso(now), signupEndIso: iso(signupEnd), eventStartIso: iso(eventStart), eventEndIso: iso(eventEnd) }
+}
 const EMPTY_PODCAST: PodcastForm = { title: '', episode: '', description: '', cover_url: '' }
 const EMPTY_PRODUCT: ProductForm = { name: '', points_cost: '', stock: '', product_type: 'normal', size_options: '' }
 
@@ -80,7 +100,10 @@ export default function AdminPage() {
   const [expandedRegId, setExpandedRegId] = useState<number | null>(null)
   const [adminEvents, setAdminEvents] = useState<AdminEvent[]>([])
   const [eventsLoading, setEventsLoading] = useState(false)
-  const [eventSubTab, setEventSubTab] = useState<'list' | 'create'>('list')
+  const [eventSubTab, setEventSubTab] = useState<'list' | 'create' | 'edit'>('list')
+  const [editingEventId, setEditingEventId] = useState<number | null>(null)
+  const [editingHasRegs, setEditingHasRegs] = useState(false)
+  const [editingOriginalDate, setEditingOriginalDate] = useState('')
   // Per-event registration drill-down
   const [selectedEvent, setSelectedEvent] = useState<AdminEvent | null>(null)
   const [eventRegs, setEventRegs] = useState<RegItem[]>([])
@@ -182,6 +205,157 @@ export default function AdminPage() {
       Taro.showToast({ title: event.is_active ? '已下架' : '已上架', icon: 'success' })
       loadAdminEvents()
     } catch (e) {}
+  }
+
+  const handleSetOffline = (ev: AdminEvent) => {
+    Taro.showModal({
+      title: '下架活动',
+      content: `确认下架「${ev.title}」？\n下架后前端不再展示，已报名用户仍可查看。`,
+      confirmText: '下架',
+      cancelText: '取消',
+      confirmColor: '#f5a623',
+      success: async (res) => {
+        if (!res.confirm) return
+        try {
+          await request({ url: `/events/${ev.id}/offline`, method: 'PATCH' })
+          Taro.showToast({ title: '已下架', icon: 'success' })
+          loadAdminEvents()
+        } catch (e: any) {
+          Taro.showToast({ title: e?.message || '操作失败', icon: 'none' })
+        }
+      },
+    })
+  }
+
+  const handleEditEvent = (ev: AdminEvent) => {
+    const fields: FormFieldConfig[] = ev.form_config?.fields
+      ? DEFAULT_FORM_FIELDS.map(def => {
+          const saved = ev.form_config.fields.find((f: FormFieldConfig) => f.key === def.key)
+          return saved ? { ...def, enabled: saved.enabled, required: saved.required } : { ...def }
+        })
+      : DEFAULT_FORM_FIELDS.map(f => ({ ...f }))
+
+    setEventForm({
+      title: ev.title,
+      signup_start: ev.signup_start_time || '',
+      signup_end: ev.signup_end_time || '',
+      event_start: ev.event_start_time || ev.date || '',
+      event_end: ev.event_end_time || '',
+      location: ev.location || '',
+      route: ev.route || '',
+      description: ev.description || '',
+      max_people: String(ev.max_people || 30),
+      cover_image: ev.cover_image || '',
+    })
+    setFormFields(fields)
+    setCoverLocalPath(ev.cover_image ? `${BASE_URL}${ev.cover_image}` : '')
+    setEditingEventId(ev.id)
+    setEditingHasRegs((ev.registration_count ?? 0) > 0)
+    setEditingOriginalDate(ev.event_start_time || ev.date)
+    setEventSubTab('edit')
+  }
+
+  const handleUpdateEvent = async () => {
+    if (!editingEventId) return
+    if (!eventForm.title || !eventForm.event_start || !eventForm.signup_start || !eventForm.signup_end || !eventForm.location || !eventForm.route) {
+      Taro.showToast({ title: '请填写必填项', icon: 'none' }); return
+    }
+    if (submitting) return
+
+    const dateChanged = eventForm.event_start !== editingOriginalDate
+
+    const doUpdate = async () => {
+      setSubmitting(true)
+      try {
+        await request({
+          url: `/events/${editingEventId}`,
+          method: 'PATCH',
+          data: {
+            title: eventForm.title,
+            date: eventForm.event_start,
+            signup_start_time: eventForm.signup_start || undefined,
+            signup_end_time: eventForm.signup_end || undefined,
+            event_start_time: eventForm.event_start || undefined,
+            event_end_time: eventForm.event_end || undefined,
+            location: eventForm.location,
+            route: eventForm.route,
+            description: eventForm.description || '暂无详情',
+            max_people: parseInt(eventForm.max_people) || 30,
+            cover_image: eventForm.cover_image || undefined,
+            form_config: { fields: formFields },
+          },
+        })
+        Taro.showToast({ title: '活动已更新', icon: 'success' })
+        setEventSubTab('list')
+        setEditingEventId(null)
+        setEventForm(EMPTY_EVENT)
+        setCoverLocalPath('')
+        setFormFields(DEFAULT_FORM_FIELDS.map(f => ({ ...f })))
+        loadAdminEvents()
+      } catch (e: any) {
+        Taro.showToast({ title: e?.message || '更新失败', icon: 'none' })
+      } finally { setSubmitting(false) }
+    }
+
+    if (dateChanged && editingHasRegs) {
+      Taro.showModal({
+        title: '修改活动时间',
+        content: '该活动已有报名用户，修改时间可能影响用户安排，是否确认修改？',
+        confirmText: '确认修改',
+        cancelText: '取消',
+        confirmColor: '#f5a623',
+        success: async (res) => { if (res.confirm) await doUpdate() },
+      })
+    } else {
+      await doUpdate()
+    }
+  }
+
+  const handleCopyEvent = (ev: AdminEvent) => {
+    const fields: FormFieldConfig[] = ev.form_config?.fields
+      ? DEFAULT_FORM_FIELDS.map(def => {
+          const saved = ev.form_config.fields.find((f: FormFieldConfig) => f.key === def.key)
+          return saved ? { ...def, enabled: saved.enabled, required: saved.required } : { ...def }
+        })
+      : DEFAULT_FORM_FIELDS.map(f => ({ ...f }))
+
+    setEventForm({
+      title: `${ev.title}（副本）`,
+      signup_start: ev.signup_start_time || '',
+      signup_end: ev.signup_end_time || '',
+      event_start: ev.event_start_time || ev.date || '',
+      event_end: ev.event_end_time || '',
+      location: ev.location || '',
+      route: ev.route || '',
+      description: ev.description || '',
+      max_people: String(ev.max_people || 30),
+      cover_image: ev.cover_image || '',
+    })
+    setFormFields(fields)
+    setCoverLocalPath(ev.cover_image ? `${BASE_URL}${ev.cover_image}` : '')
+    setEditingEventId(null)
+    setEventSubTab('create')
+    Taro.showToast({ title: '已复制，请修改后提交', icon: 'none' })
+  }
+
+  const handleDeleteEvent = (ev: AdminEvent) => {
+    Taro.showModal({
+      title: '删除活动',
+      content: `确认删除「${ev.title}」？\n仅无报名记录的活动可删除，此操作不可恢复。`,
+      confirmText: '删除',
+      cancelText: '取消',
+      confirmColor: '#ff4444',
+      success: async (res) => {
+        if (!res.confirm) return
+        try {
+          await request({ url: `/events/${ev.id}`, method: 'DELETE' })
+          Taro.showToast({ title: '已删除', icon: 'success' })
+          loadAdminEvents()
+        } catch (e: any) {
+          Taro.showToast({ title: e?.message || '已有用户报名，请先下架', icon: 'none' })
+        }
+      },
+    })
   }
 
   const handleViewEventRegs = async (event: AdminEvent) => {
@@ -394,13 +568,26 @@ export default function AdminPage() {
   }
 
   const handleCreateEvent = async () => {
-    if (!eventForm.title || !eventForm.date || !eventForm.location || !eventForm.route) {
+    if (!eventForm.title || !eventForm.event_start || !eventForm.signup_start || !eventForm.signup_end || !eventForm.location || !eventForm.route) {
       Taro.showToast({ title: '请填写必填项', icon: 'none' }); return
     }
     if (submitting) return
     setSubmitting(true)
     try {
-      await request({ url: '/events', method: 'POST', data: { ...eventForm, description: eventForm.description || '暂无详情', max_people: parseInt(eventForm.max_people) || 30, form_config: { fields: formFields } } })
+      await request({ url: '/events', method: 'POST', data: {
+        title: eventForm.title,
+        date: eventForm.event_start,
+        signup_start_time: eventForm.signup_start || undefined,
+        signup_end_time: eventForm.signup_end || undefined,
+        event_start_time: eventForm.event_start || undefined,
+        event_end_time: eventForm.event_end || undefined,
+        location: eventForm.location,
+        route: eventForm.route,
+        description: eventForm.description || '暂无详情',
+        max_people: parseInt(eventForm.max_people) || 30,
+        cover_image: eventForm.cover_image || undefined,
+        form_config: { fields: formFields },
+      } })
       Taro.showToast({ title: '活动创建成功！', icon: 'success' })
       setEventForm(EMPTY_EVENT)
       setCoverLocalPath('')
@@ -565,12 +752,17 @@ export default function AdminPage() {
           {/* Sub-tabs — hidden when drilling into event regs */}
           {!selectedEvent && (
             <View className='mall-sub-tabs'>
-              <View className={`sub-tab ${eventSubTab === 'list' ? 'active' : ''}`} onClick={() => setEventSubTab('list')}>
+              <View className={`sub-tab ${eventSubTab === 'list' ? 'active' : ''}`} onClick={() => { setEventSubTab('list'); setEditingEventId(null) }}>
                 <Text className='sub-tab-text'>活动列表</Text>
               </View>
-              <View className={`sub-tab ${eventSubTab === 'create' ? 'active' : ''}`} onClick={() => setEventSubTab('create')}>
+              <View className={`sub-tab ${eventSubTab === 'create' ? 'active' : ''}`} onClick={() => { const dt = getDefaultDateTimes(); setEventSubTab('create'); setEditingEventId(null); setEventForm({ ...EMPTY_EVENT, signup_start: dt.signupStartIso, signup_end: dt.signupEndIso, event_start: dt.eventStartIso, event_end: dt.eventEndIso }); setCoverLocalPath(''); setFormFields(DEFAULT_FORM_FIELDS.map(f => ({ ...f }))) }}>
                 <Text className='sub-tab-text'>创建活动</Text>
               </View>
+              {eventSubTab === 'edit' && (
+                <View className='sub-tab active'>
+                  <Text className='sub-tab-text'>编辑活动</Text>
+                </View>
+              )}
             </View>
           )}
 
@@ -636,29 +828,74 @@ export default function AdminPage() {
                   {adminEvents.map((ev) => {
                     const d = new Date(ev.date)
                     const dateStr = `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`
+                    const isDeleted = ev.status === 'deleted'
+                    const isOffline = ev.status === 'offline'
                     const isPublished = ev.status === 'published'
+                    const isDraft = ev.status === 'draft'
+                    const hasRegs = (ev.registration_count ?? 0) > 0
+
+                    const statusColor = isDeleted ? '#555' : isOffline ? '#f5a623' : isPublished ? '#4caf50' : '#888'
+                    const statusLabel = isDeleted ? '已删除' : isOffline ? '已下架' : isPublished ? '已发布' : '草稿'
+
                     return (
-                      <View key={ev.id} className='reg-admin-item'>
+                      <View key={ev.id} className='reg-admin-item' style={isDeleted ? 'opacity:0.5;' : ''}>
                         <View className='reg-admin-top'>
                           <View className='reg-admin-info'>
                             <Text className='reg-admin-name'>{ev.title}</Text>
                             <Text className='reg-admin-phone'>{dateStr} · {ev.registration_count ?? 0} 人报名</Text>
                           </View>
-                          <View className={`product-toggle ${ev.is_active ? 'on' : 'off'}`} onClick={() => handleToggleEvent(ev)}>
-                            <Text className='product-toggle-text'>{ev.is_active ? '已上架' : '已下架'}</Text>
+                          <View style={`padding:6rpx 16rpx;border:1rpx solid ${statusColor};border-radius:4rpx;`}>
+                            <Text style={`font-size:20rpx;color:${statusColor};`}>{statusLabel}</Text>
                           </View>
                         </View>
-                        <View style='display:flex;align-items:center;gap:16rpx;margin-top:12rpx;'>
-                          {isPublished && (
-                            <View style='padding:6rpx 16rpx;border:1rpx solid #333;border-radius:4rpx;'>
-                              <Text style='font-size:20rpx;color:#888;'>已锁定</Text>
+
+                        {/* 操作按钮行 */}
+                        {!isDeleted && (
+                          <View style='display:flex;align-items:center;gap:12rpx;margin-top:16rpx;flex-wrap:wrap;'>
+                            {/* 编辑按钮：未结束且未删除均可编辑 */}
+                            {new Date(ev.date) >= new Date() && (
+                              <View
+                                style='padding:10rpx 20rpx;border:1rpx solid #888;border-radius:8rpx;'
+                                onClick={() => handleEditEvent(ev)}
+                              >
+                                <Text style='font-size:22rpx;color:#ccc;'>编辑</Text>
+                              </View>
+                            )}
+
+                            {/* 复制按钮 */}
+                            <View
+                              style='padding:10rpx 20rpx;border:1rpx solid #444;border-radius:8rpx;'
+                              onClick={() => handleCopyEvent(ev)}
+                            >
+                              <Text style='font-size:22rpx;color:#888;'>复制</Text>
                             </View>
-                          )}
-                          <View style='flex:1;' />
-                          <View style='padding:10rpx 24rpx;background:#1a1a1a;border-radius:8rpx;' onClick={() => handleViewEventRegs(ev)}>
-                            <Text style='font-size:22rpx;color:#ccc;'>查看报名 →</Text>
+
+                            {/* 下架按钮：发布中或草稿均可下架 */}
+                            {(isPublished || isDraft) && (
+                              <View
+                                style='padding:10rpx 20rpx;border:1rpx solid #f5a623;border-radius:8rpx;'
+                                onClick={() => handleSetOffline(ev)}
+                              >
+                                <Text style='font-size:22rpx;color:#f5a623;'>下架</Text>
+                              </View>
+                            )}
+
+                            {/* 删除按钮：无报名记录时可删 */}
+                            {!hasRegs && !isPublished && (
+                              <View
+                                style='padding:10rpx 20rpx;border:1rpx solid #ff4444;border-radius:8rpx;'
+                                onClick={() => handleDeleteEvent(ev)}
+                              >
+                                <Text style='font-size:22rpx;color:#ff4444;'>删除</Text>
+                              </View>
+                            )}
+
+                            <View style='flex:1;' />
+                            <View style='padding:10rpx 24rpx;background:#1a1a1a;border-radius:8rpx;' onClick={() => handleViewEventRegs(ev)}>
+                              <Text style='font-size:22rpx;color:#ccc;'>查看报名 →</Text>
+                            </View>
                           </View>
-                        </View>
+                        )}
                       </View>
                     )
                   })}
@@ -668,13 +905,72 @@ export default function AdminPage() {
             </View>
           )}
 
-          {/* Create event form */}
-          {!selectedEvent && eventSubTab === 'create' && (
+          {/* Create / Edit event form */}
+          {!selectedEvent && (eventSubTab === 'create' || eventSubTab === 'edit') && (
             <ScrollView scrollY className='form-scroll'>
               <View className='form-body'>
+                {/* 活动名称 */}
+                <View className='form-item'>
+                  <Text className='form-label'>活动名称 *</Text>
+                  <Input className='form-input' value={eventForm.title} onInput={setEField('title')} placeholder='例：东湖夜跑 Vol.12' placeholderClass='input-placeholder' />
+                </View>
+
+                {/* ── 报名时间 ── */}
+                <View className='form-time-group'>
+                  <Text className='form-time-group-label'>报名时间</Text>
+                  <View className='form-item'>
+                    <Text className='form-label'>开始时间 *</Text>
+                    <View className='picker-row'>
+                      <Picker mode='date' value={getDatePart(eventForm.signup_start)} onChange={(e: any) => { const d = e.detail.value as string; const t = getTimePart(eventForm.signup_start) || '08:00'; setEventForm(f => ({ ...f, signup_start: combineDateTime(d, t) })) }}>
+                        <View className='picker-display'><Text className={`picker-value-text${!getDatePart(eventForm.signup_start) ? ' picker-placeholder' : ''}`}>{getDatePart(eventForm.signup_start) || '选择日期'}</Text></View>
+                      </Picker>
+                      <Picker mode='time' value={getTimePart(eventForm.signup_start)} onChange={(e: any) => { const t = e.detail.value as string; const d = getDatePart(eventForm.signup_start); setEventForm(f => ({ ...f, signup_start: combineDateTime(d, t) })) }}>
+                        <View className='picker-display'><Text className={`picker-value-text${!getTimePart(eventForm.signup_start) ? ' picker-placeholder' : ''}`}>{getTimePart(eventForm.signup_start) || '选择时间'}</Text></View>
+                      </Picker>
+                    </View>
+                  </View>
+                  <View className='form-item'>
+                    <Text className='form-label'>截止时间 *</Text>
+                    <View className='picker-row'>
+                      <Picker mode='date' value={getDatePart(eventForm.signup_end)} onChange={(e: any) => { const d = e.detail.value as string; const t = getTimePart(eventForm.signup_end) || '07:30'; setEventForm(f => ({ ...f, signup_end: combineDateTime(d, t) })) }}>
+                        <View className='picker-display'><Text className={`picker-value-text${!getDatePart(eventForm.signup_end) ? ' picker-placeholder' : ''}`}>{getDatePart(eventForm.signup_end) || '选择日期'}</Text></View>
+                      </Picker>
+                      <Picker mode='time' value={getTimePart(eventForm.signup_end)} onChange={(e: any) => { const t = e.detail.value as string; const d = getDatePart(eventForm.signup_end) || getDatePart(eventForm.signup_start); setEventForm(f => ({ ...f, signup_end: combineDateTime(d, t) })) }}>
+                        <View className='picker-display'><Text className={`picker-value-text${!getTimePart(eventForm.signup_end) ? ' picker-placeholder' : ''}`}>{getTimePart(eventForm.signup_end) || '选择时间'}</Text></View>
+                      </Picker>
+                    </View>
+                  </View>
+                </View>
+
+                {/* ── 活动时间 ── */}
+                <View className='form-time-group'>
+                  <Text className='form-time-group-label'>活动时间</Text>
+                  <View className='form-item'>
+                    <Text className='form-label'>开始时间 *</Text>
+                    <View className='picker-row'>
+                      <Picker mode='date' value={getDatePart(eventForm.event_start)} onChange={(e: any) => { const d = e.detail.value as string; const t = getTimePart(eventForm.event_start) || '08:00'; setEventForm(f => ({ ...f, event_start: combineDateTime(d, t) })) }}>
+                        <View className='picker-display'><Text className={`picker-value-text${!getDatePart(eventForm.event_start) ? ' picker-placeholder' : ''}`}>{getDatePart(eventForm.event_start) || '选择日期'}</Text></View>
+                      </Picker>
+                      <Picker mode='time' value={getTimePart(eventForm.event_start)} onChange={(e: any) => { const t = e.detail.value as string; const d = getDatePart(eventForm.event_start); setEventForm(f => ({ ...f, event_start: combineDateTime(d, t) })) }}>
+                        <View className='picker-display'><Text className={`picker-value-text${!getTimePart(eventForm.event_start) ? ' picker-placeholder' : ''}`}>{getTimePart(eventForm.event_start) || '选择时间'}</Text></View>
+                      </Picker>
+                    </View>
+                  </View>
+                  <View className='form-item'>
+                    <Text className='form-label'>结束时间 *</Text>
+                    <View className='picker-row'>
+                      <Picker mode='date' value={getDatePart(eventForm.event_end)} onChange={(e: any) => { const d = e.detail.value as string; const t = getTimePart(eventForm.event_end) || '10:00'; setEventForm(f => ({ ...f, event_end: combineDateTime(d, t) })) }}>
+                        <View className='picker-display'><Text className={`picker-value-text${!getDatePart(eventForm.event_end) ? ' picker-placeholder' : ''}`}>{getDatePart(eventForm.event_end) || '选择日期'}</Text></View>
+                      </Picker>
+                      <Picker mode='time' value={getTimePart(eventForm.event_end)} onChange={(e: any) => { const t = e.detail.value as string; const d = getDatePart(eventForm.event_end) || getDatePart(eventForm.event_start); setEventForm(f => ({ ...f, event_end: combineDateTime(d, t) })) }}>
+                        <View className='picker-display'><Text className={`picker-value-text${!getTimePart(eventForm.event_end) ? ' picker-placeholder' : ''}`}>{getTimePart(eventForm.event_end) || '选择时间'}</Text></View>
+                      </Picker>
+                    </View>
+                  </View>
+                </View>
+
+                {/* 集合地点 / 路线 / 人数 */}
                 {[
-                  { key: 'title', label: '活动名称 *', placeholder: '例：东湖夜跑 Vol.12' },
-                  { key: 'date', label: '活动日期 *', placeholder: '2026-03-20T19:00:00' },
                   { key: 'location', label: '集合地点 *', placeholder: '例：东湖公园南门' },
                   { key: 'route', label: '路线 *', placeholder: '例：东湖环线 10KM' },
                   { key: 'max_people', label: '人数上限', placeholder: '30' },
@@ -743,8 +1039,15 @@ export default function AdminPage() {
                   ))}
                 </View>
 
-                <View className={`submit-btn ${submitting || uploadingCover ? 'disabled' : ''}`} onClick={handleCreateEvent}>
-                  <Text className='submit-text'>{submitting ? '创建中...' : '创建活动'}</Text>
+                <View
+                  className={`submit-btn ${submitting || uploadingCover ? 'disabled' : ''}`}
+                  onClick={eventSubTab === 'edit' ? handleUpdateEvent : handleCreateEvent}
+                >
+                  <Text className='submit-text'>
+                    {submitting
+                      ? (eventSubTab === 'edit' ? '保存中...' : '创建中...')
+                      : (eventSubTab === 'edit' ? '保存修改' : '创建活动')}
+                  </Text>
                 </View>
               </View>
             </ScrollView>

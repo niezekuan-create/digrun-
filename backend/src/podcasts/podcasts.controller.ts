@@ -1,10 +1,26 @@
 import {
   Controller, Get, Post, Delete, Param, Body,
-  UseInterceptors, UploadedFile, UseGuards,
+  UseInterceptors, UploadedFile, UseGuards, BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+
+const imageFileFilter = (req: any, file: Express.Multer.File, cb: Function) => {
+  const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  if (!allowed.includes(file.mimetype)) {
+    return cb(new BadRequestException('仅允许上传 jpg / png / webp / gif 图片'), false);
+  }
+  cb(null, true);
+};
+
+const audioFileFilter = (req: any, file: Express.Multer.File, cb: Function) => {
+  const allowed = ['audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/m4a', 'audio/wav', 'audio/x-m4a'];
+  if (!allowed.includes(file.mimetype)) {
+    return cb(new BadRequestException('仅允许上传 mp3 / m4a / wav 音频文件'), false);
+  }
+  cb(null, true);
+};
 import { PodcastsService } from './podcasts.service';
 import { CreatePodcastDto } from './dto/create-podcast.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -25,6 +41,7 @@ export class PodcastsController {
         },
       }),
       limits: { fileSize: 200 * 1024 * 1024 }, // 200MB
+      fileFilter: audioFileFilter,
     }),
   )
   uploadAudio(@UploadedFile() file: Express.Multer.File) {
@@ -43,6 +60,7 @@ export class PodcastsController {
         },
       }),
       limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: imageFileFilter,
     }),
   )
   uploadCover(@UploadedFile() file: Express.Multer.File) {

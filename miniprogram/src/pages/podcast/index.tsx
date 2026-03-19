@@ -1,9 +1,9 @@
-import { View, Text, ScrollView } from '@tarojs/components'
+import { View, Text, ScrollView, Image } from '@tarojs/components'
 import { useLoad } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import { useState } from 'react'
 import BottomNav from '../../components/BottomNav/index'
-import { request } from '../../utils/request'
+import { request, BASE_URL } from '../../utils/request'
 import './index.scss'
 
 interface Podcast {
@@ -12,6 +12,7 @@ interface Podcast {
   episode?: number
   description?: string
   audio_url: string
+  cover_url?: string
   duration?: number
   created_at: string
 }
@@ -71,10 +72,22 @@ export default function PodcastPage() {
         <ScrollView scrollY className='podcast-list'>
           {podcasts.map((p, i) => (
             <View key={p.id} className='podcast-card' onClick={() => goPlayer(p)}>
-              <View className='episode-num'>
-                <Text className='ep-text'>{p.episode ? `EP${String(p.episode).padStart(2, '0')}` : String(i + 1).padStart(2, '0')}</Text>
+              <View className='podcast-cover-wrap'>
+                {p.cover_url ? (
+                  <Image src={`${BASE_URL}${p.cover_url}`} className='podcast-cover-thumb' mode='aspectFill' />
+                ) : (
+                  <View className='podcast-cover-placeholder'>
+                    <Text className='podcast-ep-num'>
+                      {p.episode ? `EP${String(p.episode).padStart(2, '0')}` : String(i + 1).padStart(2, '0')}
+                    </Text>
+                  </View>
+                )}
               </View>
+
               <View className='podcast-info'>
+                {p.episode && (
+                  <Text className='podcast-ep-label'>EP {p.episode}</Text>
+                )}
                 <Text className='podcast-title'>{p.title}</Text>
                 {p.description && (
                   <Text className='podcast-desc'>{p.description}</Text>
@@ -86,6 +99,7 @@ export default function PodcastPage() {
                   )}
                 </View>
               </View>
+
               <View className='play-btn'>
                 <Text className='play-icon'>▶</Text>
               </View>

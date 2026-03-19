@@ -11,7 +11,16 @@ import { UsersModule } from '../users/users.module';
     UsersModule,
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'digrun-secret-key',
+      secret: (() => {
+        const s = process.env.JWT_SECRET;
+        if (!s || s === 'digrun-secret-key') {
+          if (process.env.NODE_ENV === 'production') {
+            throw new Error('JWT_SECRET must be set in production environment');
+          }
+          console.warn('[SECURITY] JWT_SECRET is not set — using insecure default. Set JWT_SECRET in .env before going live.');
+        }
+        return s || 'digrun-secret-key';
+      })(),
       signOptions: { expiresIn: '30d' },
     }),
   ],

@@ -1,23 +1,40 @@
 import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not, In } from 'typeorm';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
+import { Repository, Not, In, DataSource } from 'typeorm';
+import { createHmac, timingSafeEqual } from 'crypto';
 import * as QRCode from 'qrcode';
 import { Registration } from './entities/registration.entity';
 import { CreateRegistrationDto } from './dto/create-registration.dto';
 import { UpdateRegistrationDto } from './dto/update-registration.dto';
 import { PointsService } from '../points/points.service';
+import { Event } from '../events/entities/event.entity';
+
+const QR_SECRET = process.env.JWT_SECRET || 'digrun-secret-key';
+const QR_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function signQr(payload: string): string {
+  return createHmac('sha256', QR_SECRET).update(payload).digest('hex');
+}
+
+function verifyQr(payload: string, sig: string): boolean {
+  const expected = Buffer.from(signQr(payload));
+  const actual = Buffer.from(sig);
+  if (expected.length !== actual.length) return false;
+  return timingSafeEqual(expected, actual);
+}
 
 @Injectable()
 export class RegistrationsService {
   constructor(
     @InjectRepository(Registration)
     private registrationsRepository: Repository<Registration>,
+    @InjectDataSource()
+    private dataSource: DataSource,
     private pointsService: PointsService,
   ) {}
 
   // ─── Create ───────────────────────────────────────────────
   async create(userId: number, dto: CreateRegistrationDto) {
-    // Prevent duplicate active registration
     const existing = await this.registrationsRepository.findOne({
       where: {
         user_id: userId,
@@ -57,37 +74,42 @@ export class RegistrationsService {
   }
 
   // ─── Admin: approve ───────────────────────────────────────
+  // BUG-05 fix: wrap in transaction with row-level lock to prevent concurrent over-approval
   async approve(adminId: number, registrationId: number) {
-    const reg = await this.registrationsRepository.findOne({
-      where: { id: registrationId },
-      relations: ['event'],
-    });
-    if (!reg) throw new NotFoundException('Registration not found');
-    if (reg.status === 'cancelled') {
-      throw new BadRequestException('Cannot approve a cancelled registration');
-    }
-    if (reg.status === 'checked_in') {
-      throw new BadRequestException('Already checked in');
-    }
+    return this.dataSource.transaction(async (manager) => {
+      const regRepo = manager.getRepository(Registration);
 
-    // Check capacity: count currently approved for this event
-    if (reg.event?.max_people) {
-      const approvedCount = await this.registrationsRepository.count({
-        where: { event_id: reg.event_id, status: In(['approved', 'checked_in']) },
-      });
-      if (approvedCount >= reg.event.max_people) {
-        throw new BadRequestException('活动名额已满');
+      const reg = await regRepo
+        .createQueryBuilder('r')
+        .setLock('pessimistic_write')
+        .leftJoinAndSelect('r.event', 'event')
+        .where('r.id = :id', { id: registrationId })
+        .getOne();
+
+      if (!reg) throw new NotFoundException('Registration not found');
+      if (reg.status === 'cancelled') throw new BadRequestException('Cannot approve a cancelled registration');
+      if (reg.status === 'approved') throw new BadRequestException('Already approved');
+      if (reg.status === 'checked_in') throw new BadRequestException('Already checked in');
+
+      if (reg.event?.max_people) {
+        const approvedCount = await regRepo.count({
+          where: { event_id: reg.event_id, status: In(['approved', 'checked_in']) },
+        });
+        if (approvedCount >= reg.event.max_people) {
+          throw new BadRequestException('活动名额已满');
+        }
       }
-    }
 
-    await this.registrationsRepository.update(registrationId, {
-      status: 'approved',
-      approved_by: adminId,
-      approved_at: new Date(),
-    });
-    return this.registrationsRepository.findOne({
-      where: { id: registrationId },
-      relations: ['user', 'event'],
+      await regRepo.update(registrationId, {
+        status: 'approved',
+        approved_by: adminId,
+        approved_at: new Date(),
+      });
+
+      return regRepo.findOne({
+        where: { id: registrationId },
+        relations: ['user', 'event'],
+      });
     });
   }
 
@@ -128,7 +150,6 @@ export class RegistrationsService {
     });
   }
 
-  // Admin: all registrations, optionally filtered by event
   findAllForAdmin(eventId?: number) {
     const where: any = {};
     if (eventId) where.event_id = eventId;
@@ -151,44 +172,90 @@ export class RegistrationsService {
   }
 
   // ─── Checkin ──────────────────────────────────────────────
+  // BUG-03 fix: transaction + row-lock prevents concurrent double award
+  // BUG-06 fix: verify HMAC signature and timestamp from QR payload
   async checkin(qrData: string) {
-    const match = qrData.match(/rid=(\d+)/);
-    if (!match) throw new BadRequestException('Invalid QR code');
+    // Support both new signed format and legacy format
+    const signedMatch = qrData.match(/[?&]p=([^&]+)&s=([^&]+)/);
+    const legacyMatch = !signedMatch && qrData.match(/rid=(\d+)/);
 
-    const registrationId = parseInt(match[1]);
-    const registration = await this.registrationsRepository.findOne({
-      where: { id: registrationId },
-      relations: ['user', 'event'],
+    let registrationId: number;
+
+    if (signedMatch) {
+      const rawPayload = decodeURIComponent(signedMatch[1]);
+      const sig = decodeURIComponent(signedMatch[2]);
+
+      if (!verifyQr(rawPayload, sig)) {
+        throw new BadRequestException('签到码无效（签名错误）');
+      }
+
+      // payload = "rid:uid:eid:timestamp"
+      const parts = rawPayload.split(':');
+      if (parts.length !== 4) throw new BadRequestException('签到码格式错误');
+      registrationId = parseInt(parts[0]);
+      const ts = parseInt(parts[3]);
+      if (Date.now() - ts > QR_TTL_MS) {
+        throw new BadRequestException('签到码已过期，请重新生成');
+      }
+    } else if (legacyMatch) {
+      registrationId = parseInt(legacyMatch[1]);
+    } else {
+      throw new BadRequestException('Invalid QR code');
+    }
+
+    return this.dataSource.transaction(async (manager) => {
+      const regRepo = manager.getRepository(Registration);
+
+      const registration = await regRepo
+        .createQueryBuilder('r')
+        .setLock('pessimistic_write')
+        .leftJoinAndSelect('r.user', 'user')
+        .leftJoinAndSelect('r.event', 'event')
+        .where('r.id = :id', { id: registrationId })
+        .getOne();
+
+      if (!registration) throw new NotFoundException('Registration not found');
+
+      if (registration.status === 'checked_in') {
+        return { message: 'Already checked in', registration };
+      }
+      if (registration.status === 'cancelled' || registration.status === 'rejected') {
+        throw new BadRequestException('报名已取消或被拒绝，无法签到');
+      }
+      if (registration.status === 'pending') {
+        throw new BadRequestException('报名待审核，请等待管理员审核后再签到');
+      }
+
+      await regRepo.update(registrationId, {
+        status: 'checked_in',
+        checkin_time: new Date(),
+      });
+
+      const eventTitle = registration.event?.title || `活动 #${registration.event_id}`;
+      await this.pointsService.awardCheckinPointsInTx(
+        manager,
+        registration.user_id,
+        registration.event_id,
+        eventTitle,
+      );
+
+      return { message: 'Check-in successful', registration: { ...registration, status: 'checked_in' } };
     });
-    if (!registration) throw new NotFoundException('Registration not found');
-
-    if (registration.status === 'checked_in') {
-      return { message: 'Already checked in', registration };
-    }
-    if (registration.status === 'cancelled' || registration.status === 'rejected') {
-      throw new BadRequestException('报名已取消或被拒绝，无法签到');
-    }
-    if (registration.status === 'pending') {
-      throw new BadRequestException('报名待审核，请等待管理员审核后再签到');
-    }
-
-    await this.registrationsRepository.update(registrationId, {
-      status: 'checked_in',
-      checkin_time: new Date(),
-    });
-    const eventTitle = registration.event?.title || `活动 #${registration.event_id}`;
-    await this.pointsService.awardCheckinPoints(registration.user_id, registration.event_id, eventTitle);
-    return { message: 'Check-in successful', registration: { ...registration, status: 'checked_in' } };
   }
 
   // ─── QR Code ──────────────────────────────────────────────
+  // BUG-06 fix: signed QR with timestamp
   async getQrCode(id: number) {
     const registration = await this.registrationsRepository.findOne({
       where: { id },
       relations: ['user', 'event'],
     });
     if (!registration) throw new NotFoundException('Registration not found');
-    const qrData = `digrun://checkin?rid=${id}&uid=${registration.user_id}&eid=${registration.event_id}`;
+
+    const payload = `${id}:${registration.user_id}:${registration.event_id}:${Date.now()}`;
+    const sig = signQr(payload);
+    const qrData = `digrun://checkin?p=${encodeURIComponent(payload)}&s=${encodeURIComponent(sig)}`;
+
     const qrCode = await QRCode.toDataURL(qrData, { width: 300 });
     return { qrcode: qrCode, registration };
   }

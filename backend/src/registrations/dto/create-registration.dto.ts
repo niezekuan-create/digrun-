@@ -1,4 +1,4 @@
-import { IsNumber, IsString, IsBoolean, IsOptional } from 'class-validator';
+import { IsNumber, IsString, IsBoolean, IsOptional, IsObject, MaxLength } from 'class-validator';
 
 export class CreateRegistrationDto {
   @IsNumber()
@@ -6,30 +6,37 @@ export class CreateRegistrationDto {
 
   @IsString()
   @IsOptional()
+  @MaxLength(50)
   name?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(20)
   phone?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(20)
   pace?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(20)
   distance?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(10)
   top_size?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(10)
   pants_size?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(10)
   shoe_size?: string;
 
   @IsBoolean()
@@ -40,6 +47,7 @@ export class CreateRegistrationDto {
   @IsOptional()
   coffee?: boolean;
 
+  @IsObject()
   @IsOptional()
-  form_data?: any;
+  form_data?: Record<string, string>;
 }

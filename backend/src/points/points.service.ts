@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
+import { Repository, DataSource, EntityManager } from 'typeorm';
 import { UserPoints } from './entities/user-points.entity';
 import { PointsTransaction } from './entities/points-transaction.entity';
 import { PointsProduct } from './entities/points-product.entity';
@@ -20,15 +20,18 @@ export class PointsService {
     private productRepo: Repository<PointsProduct>,
     @InjectRepository(PointsOrder)
     private orderRepo: Repository<PointsOrder>,
+    @InjectDataSource()
+    private dataSource: DataSource,
   ) {}
 
   // ─── Account ───────────────────────────────────────────────
 
-  async getOrCreate(userId: number): Promise<UserPoints> {
-    let account = await this.userPointsRepo.findOneBy({ user_id: userId });
+  async getOrCreate(userId: number, manager?: EntityManager): Promise<UserPoints> {
+    const repo = manager ? manager.getRepository(UserPoints) : this.userPointsRepo;
+    let account = await repo.findOneBy({ user_id: userId });
     if (!account) {
-      account = this.userPointsRepo.create({ user_id: userId, points_balance: 0, points_total: 0 });
-      account = await this.userPointsRepo.save(account);
+      account = repo.create({ user_id: userId, points_balance: 0, points_total: 0 });
+      account = await repo.save(account);
     }
     return account;
   }
@@ -68,6 +71,24 @@ export class PointsService {
 
   async awardCheckinPoints(userId: number, eventId: number, eventTitle: string) {
     return this.awardPoints(userId, CHECKIN_POINTS, 'event_checkin', eventId, `活动签到 · ${eventTitle}`);
+  }
+
+  // BUG-03 fix: transactional version for use inside a shared transaction
+  async awardCheckinPointsInTx(manager: EntityManager, userId: number, eventId: number, eventTitle: string) {
+    const account = await this.getOrCreate(userId, manager);
+    await manager.getRepository(UserPoints).update(account.id, {
+      points_balance: account.points_balance + CHECKIN_POINTS,
+      points_total: account.points_total + CHECKIN_POINTS,
+    });
+    return manager.getRepository(PointsTransaction).save(
+      manager.getRepository(PointsTransaction).create({
+        user_id: userId,
+        points_change: CHECKIN_POINTS,
+        source: 'event_checkin',
+        related_id: eventId,
+        description: `活动签到 · ${eventTitle}`,
+      }),
+    );
   }
 
   async adminAdjust(operatorId: number, userId: number, amount: number, reason: string) {
@@ -124,41 +145,72 @@ export class PointsService {
 
   // ─── Orders ────────────────────────────────────────────────
 
-  async exchange(userId: number, productId: number, size?: string, deliveryType?: string, address?: { name?: string; phone?: string; detail?: string }) {
-    const product = await this.productRepo.findOneBy({ id: productId });
-    if (!product) throw new NotFoundException('商品不存在');
-    if (product.status !== 'active') throw new BadRequestException('商品已下架');
-    if (product.stock <= 0) throw new BadRequestException('库存不足');
+  // BUG-01 fix: wrap entire exchange in a transaction with pessimistic row-level lock
+  async exchange(
+    userId: number,
+    productId: number,
+    size?: string,
+    deliveryType?: string,
+    address?: { name?: string; phone?: string; detail?: string },
+  ) {
+    return this.dataSource.transaction(async (manager) => {
+      // Lock the product row to prevent concurrent over-exchange
+      const product = await manager
+        .createQueryBuilder(PointsProduct, 'p')
+        .setLock('pessimistic_write')
+        .where('p.id = :id', { id: productId })
+        .getOne();
 
-    const account = await this.getOrCreate(userId);
-    if (account.points_balance < product.points_cost) {
-      throw new BadRequestException(`积分不足，需要 ${product.points_cost} 积分，当前余额 ${account.points_balance}`);
-    }
+      if (!product) throw new NotFoundException('商品不存在');
+      if (product.status !== 'active') throw new BadRequestException('商品已下架');
+      if (product.stock <= 0) throw new BadRequestException('库存不足');
 
-    // Deduct points
-    await this.userPointsRepo.update(account.id, {
-      points_balance: account.points_balance - product.points_cost,
-    });
-    // Decrease stock
-    await this.productRepo.update(productId, { stock: product.stock - 1 });
+      // Lock the user points row
+      const account = await manager
+        .createQueryBuilder(UserPoints, 'up')
+        .setLock('pessimistic_write')
+        .where('up.user_id = :userId', { userId })
+        .getOne();
 
-    // Create transaction
-    await this.transactionRepo.save(
-      this.transactionRepo.create({
+      // If no points account yet, create one inside the transaction
+      const userPoints = account ?? manager.getRepository(UserPoints).create({
+        user_id: userId, points_balance: 0, points_total: 0,
+      });
+      if (!account) await manager.getRepository(UserPoints).save(userPoints);
+
+      if (userPoints.points_balance < product.points_cost) {
+        throw new BadRequestException(
+          `积分不足，需要 ${product.points_cost} 积分，当前余额 ${userPoints.points_balance}`,
+        );
+      }
+
+      // Atomic deduct
+      await manager.getRepository(UserPoints).update(userPoints.id, {
+        points_balance: userPoints.points_balance - product.points_cost,
+      });
+      await manager.decrement(PointsProduct, { id: productId }, 'stock', 1);
+
+      await manager.getRepository(PointsTransaction).save(
+        manager.getRepository(PointsTransaction).create({
+          user_id: userId,
+          points_change: -product.points_cost,
+          source: 'mall_exchange',
+          description: `积分商城兑换 · ${product.name}`,
+        }),
+      );
+
+      const order = manager.getRepository(PointsOrder).create({
         user_id: userId,
-        points_change: -product.points_cost,
-        source: 'mall_exchange',
-        description: `积分商城兑换 · ${product.name}`,
-      }),
-    );
-
-    // Create order
-    const order = this.orderRepo.create({
-      user_id: userId, product_id: productId, points_spent: product.points_cost, size,
-      delivery_type: deliveryType || 'shipping',
-      address_name: address?.name, address_phone: address?.phone, address_detail: address?.detail,
+        product_id: productId,
+        points_spent: product.points_cost,
+        size,
+        delivery_type: deliveryType || 'shipping',
+        address_name: address?.name,
+        address_phone: address?.phone,
+        address_detail: address?.detail,
+      });
+      return manager.getRepository(PointsOrder).save(order);
     });
-    return this.orderRepo.save(order);
   }
 
   getMyOrders(userId: number) {

@@ -228,6 +228,48 @@
   margin-left: 8rpx;
 }
 
+.form-time-group {
+  border: 1rpx solid #1a1a1a;
+  border-radius: 12rpx;
+  padding: 24rpx 24rpx 16rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.form-time-group-label {
+  font-size: 24rpx;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 3px;
+  margin-bottom: 4rpx;
+}
+
+.picker-row {
+  display: flex;
+  gap: 16rpx;
+}
+
+.picker-display {
+  flex: 1;
+  height: 88rpx;
+  background: #111;
+  border: 1rpx solid #222;
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  padding: 0 28rpx;
+}
+
+.picker-value-text {
+  font-size: 28rpx;
+  color: #fff;
+
+  &.picker-placeholder {
+    color: #444;
+  }
+}
+
 .cover-picker {
   width: 225rpx;
   height: 300rpx;

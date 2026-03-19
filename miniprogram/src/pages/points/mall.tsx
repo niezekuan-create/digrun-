@@ -3,10 +3,9 @@ import { useLoad } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import { useState } from 'react'
 import BottomNav from '../../components/BottomNav/index'
-import { request } from '../../utils/request'
+import { request, BASE_URL } from '../../utils/request'
 import './mall.scss'
 
-const BASE_URL = 'http://192.168.28.172:3001'
 
 interface Product {
   id: number
@@ -100,7 +99,6 @@ export default function MallPage() {
     setFlow(prev => {
       if (!prev) return null
       const next = { ...prev, ...patch }
-      const isVirtual = next.product.product_type === 'virtual'
       switch (next.step) {
         case 'size':    next.step = 'delivery'; break
         case 'delivery':next.step = next.deliveryType === 'shipping' ? 'address' : 'confirm'; break
@@ -426,7 +424,7 @@ export default function MallPage() {
 
       {flow && renderStep()}
 
-      <BottomNav current='mall' />
+      {!flow && <BottomNav current='mall' />}
     </View>
   )
 }
