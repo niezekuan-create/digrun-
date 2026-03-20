@@ -1,5 +1,5 @@
 export default definePageConfig({
-  navigationBarTitleText: '签到管理',
+  navigationBarTitleText: '',
   navigationBarBackgroundColor: '#000000',
   navigationBarTextStyle: 'white',
 })

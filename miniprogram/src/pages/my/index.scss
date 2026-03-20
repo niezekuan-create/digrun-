@@ -325,3 +325,204 @@
   color: #888;
   letter-spacing: 1px;
 }
+
+// ── 活动卡片封面缩略图 ──
+.reg-cover-wrap {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 6rpx;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #111;
+  margin-right: 16rpx;
+}
+
+.reg-cover-img {
+  width: 100%;
+  height: 100%;
+}
+
+.reg-cover-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #1a1a1a;
+}
+
+// ── section 空状态 ──
+.section-empty {
+  height: 160rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// ── 兑换记录 ──
+.orders-list {
+  padding: 0 40rpx;
+}
+
+.order-card {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #111;
+}
+
+.order-img-wrap {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 8rpx;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.order-img {
+  width: 100%;
+  height: 100%;
+}
+
+.order-img-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #1a1a1a;
+}
+
+.order-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  min-width: 0;
+}
+
+.order-name {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-meta {
+  font-size: 22rpx;
+  color: #555;
+}
+
+.order-date {
+  font-size: 20rpx;
+  color: #444;
+  letter-spacing: 1px;
+}
+
+.order-status {
+  padding: 6rpx 14rpx;
+  border-radius: 4rpx;
+  flex-shrink: 0;
+}
+
+.order-status-pending   { background: #222; }
+.order-status-completed { background: #1a2a1a; }
+.order-status-cancelled { background: #1a1a1a; }
+
+.order-status-text {
+  font-size: 20rpx;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #888;
+
+  .order-status-completed & { color: #4ade80; }
+  .order-status-cancelled & { color: #555; }
+}
+
+// ── 签到榜 ──
+.lb-list {
+  padding: 0 0 48rpx;
+}
+
+.lb-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 20rpx 40rpx;
+  border-bottom: 1rpx solid #0d0d0d;
+}
+
+.lb-row-me {
+  background: #111;
+}
+
+.lb-rank {
+  font-size: 28rpx;
+  width: 52rpx;
+  text-align: center;
+  font-weight: 800;
+  color: #555;
+  flex-shrink: 0;
+}
+
+.lb-avatar-wrap {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 32rpx;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.lb-avatar {
+  width: 100%;
+  height: 100%;
+}
+
+.lb-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #222;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lb-avatar-text {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #666;
+}
+
+.lb-name {
+  flex: 1;
+  font-size: 26rpx;
+  color: #ccc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lb-count {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.lb-my-rank-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 40rpx;
+  border-top: 1rpx solid #1a1a1a;
+  margin-top: 4rpx;
+}
+
+.lb-my-rank-label {
+  font-size: 24rpx;
+  color: #555;
+  letter-spacing: 2px;
+}
+
+.lb-my-rank-val {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #fff;
+}

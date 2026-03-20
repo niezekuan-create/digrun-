@@ -9,4 +9,9 @@ export class LeaderboardController {
   getLeaderboard(@Query('event_id') eventId?: string) {
     return this.leaderboardService.getLeaderboard(eventId ? +eventId : undefined);
   }
+
+  @Get('points')
+  getPointsLeaderboard() {
+    return this.leaderboardService.getPointsLeaderboard();
+  }
 }
