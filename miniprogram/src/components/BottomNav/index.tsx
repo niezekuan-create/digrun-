@@ -8,8 +8,6 @@ interface Props {
 
 const tabs = [
   { key: 'events', label: '活动', path: '/pages/events/index', icon: '◎' },
-  { key: 'podcast', label: '播客', path: '/pages/podcast/index', icon: '▶' },
-  { key: 'mall', label: '积分商城', path: '/pages/points/mall', icon: '◇' },
   { key: 'my', label: '我的', path: '/pages/my/index', icon: '◈' },
 ]
 

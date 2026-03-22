@@ -1,5 +1,6 @@
 export default definePageConfig({
   navigationBarTitleText: '活动详情',
-  navigationBarBackgroundColor: '#000000',
+  navigationStyle: 'custom',
+  navigationBarBackgroundColor: '#0f2418',
   navigationBarTextStyle: 'white',
 })

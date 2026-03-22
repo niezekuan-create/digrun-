@@ -1,159 +1,37 @@
 .events-page {
   min-height: 100vh;
-  background: #000;
-  padding-bottom: 120rpx;
+  background: #f2f3f5;
+  padding: 24rpx 0 140rpx;
 }
 
-.page-header {
-  padding: 48rpx 40rpx 32rpx;
-  border-bottom: 1rpx solid #1a1a1a;
-}
-
-.header-title {
-  display: block;
-  font-size: 56rpx;
-  font-weight: 900;
-  color: #fff;
-  letter-spacing: 6px;
-}
-
-.header-sub {
-  display: block;
-  font-size: 22rpx;
-  color: #555;
-  letter-spacing: 4px;
-  margin-top: 4rpx;
-}
-
-.loading, .empty {
+.loading {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 300rpx;
+  height: 260rpx;
 }
 
-.loading-text, .empty-text {
-  font-size: 24rpx;
-  color: #444;
-  letter-spacing: 4px;
+.loading-text {
+  font-size: 26rpx;
+  color: #999;
 }
 
 .events-list {
-  padding-bottom: 40rpx;
+  padding-bottom: 24rpx;
 }
 
-// ── Tab 分栏 ──
-.events-tabs {
-  display: flex;
-  border-bottom: 1rpx solid #1a1a1a;
-}
-
-.events-tab-item {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10rpx;
-  padding: 28rpx 0 24rpx;
+.activity-card {
   position: relative;
-
-  &.active::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 20%;
-    right: 20%;
-    height: 3rpx;
-    background: #fff;
-    border-radius: 2rpx;
-  }
-}
-
-.events-tab-text {
-  font-size: 26rpx;
-  font-weight: 600;
-  color: #555;
-  letter-spacing: 1px;
-
-  .active & {
-    color: #fff;
-    font-weight: 800;
-  }
-}
-
-.events-tab-count {
-  font-size: 20rpx;
-  color: #555;
-  background: #1a1a1a;
-  border-radius: 20rpx;
-  padding: 2rpx 12rpx;
-  min-width: 32rpx;
-  text-align: center;
-
-  .active & {
-    color: #fff;
-    background: #2a2a2a;
-  }
-}
-
-// ── Tab 空状态 ──
-.tab-empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 320rpx;
-}
-
-.tab-empty-text {
-  font-size: 26rpx;
-  color: #444;
-  letter-spacing: 2px;
-}
-
-.section-header {
-  padding: 36rpx 40rpx 16rpx;
-  display: flex;
-  align-items: baseline;
-}
-
-.section-past {
-  margin-top: 8rpx;
-  border-top: 1rpx solid #1a1a1a;
-}
-
-.section-label-main {
-  font-size: 28rpx;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: 4px;
-}
-
-.section-count {
-  font-size: 20rpx;
-  color: #555;
-  margin-left: 12rpx;
-}
-
-// ── Unified event card (poster + info separated) ──
-.event-card-unified {
-  width: 100%;
-  margin-bottom: 40rpx;
-
-  &.ended {
-    opacity: 0.6;
-  }
-}
-
-// 海报区（纯视觉，无文字遮罩）
-.event-card-inner {
-  position: relative;
-  width: 100%;
-  padding-top: 133.33%; // 3:4 ratio
+  width: calc(100% - 48rpx);
+  padding-top: 133.3333%;
+  margin: 0 auto 28rpx;
+  border-radius: 36rpx;
   overflow: hidden;
-  background: #111;
+  background: #ddd;
+  box-shadow: 0 18rpx 48rpx rgba(0, 0, 0, 0.12);
 }
 
-.event-card-img {
+.activity-bg {
   position: absolute;
   top: 0;
   left: 0;
@@ -161,89 +39,65 @@
   height: 100%;
 }
 
-.event-card-placeholder {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, #1c1c1c 0%, #0d0d0d 100%);
+.activity-bg.placeholder {
+  background: linear-gradient(135deg, #d9d9d9 0%, #bdbdbd 100%);
 }
 
-// 角标 — 绝对定位在海报右上角
-.event-badge-row {
+.activity-overlay-top {
   position: absolute;
-  top: 20rpx;
-  right: 20rpx;
-}
-
-// 信息区 — 海报下方独立
-.event-card-info {
-  padding: 28rpx 32rpx 0;
+  top: 28rpx;
+  left: 28rpx;
+  right: 28rpx;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   gap: 10rpx;
 }
 
-.event-card-date {
-  font-size: 22rpx;
-  color: #555;
-  letter-spacing: 3px;
-  font-weight: 700;
-}
-
-.event-card-title {
-  font-size: 38rpx;
-  font-weight: 900;
+.activity-title {
+  font-size: 34rpx;
+  font-weight: 800;
   color: #fff;
-  letter-spacing: 1px;
   line-height: 1.25;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.event-card-loc {
-  font-size: 24rpx;
-  color: #666;
-  letter-spacing: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  text-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.35);
 }
 
-.event-card-count {
-  font-size: 22rpx;
-  color: #444;
+.activity-subtitle {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.35);
 }
 
-// ── Status badge (shared) ──
-.event-status {
-  padding: 6rpx 16rpx;
-  border-radius: 4rpx;
-
-  &.open {
-    background: #fff;
-  }
-
-  &.full {
-    background: rgba(51,51,51,0.9);
-  }
-
-  &.ended {
-    background: rgba(26,26,26,0.85);
-    border: 1rpx solid rgba(255,255,255,0.15);
-  }
+.activity-overlay-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 240rpx;
+  z-index: 1;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.55) 100%);
 }
 
-.event-status-text {
-  font-size: 18rpx;
-  font-weight: 800;
-  letter-spacing: 2px;
+.activity-cta {
+  position: absolute;
+  right: 28rpx;
+  bottom: 28rpx;
+  z-index: 3;
+  background: rgba(0, 0, 0, 0.85);
+  border-radius: 60rpx;
+  padding: 18rpx 34rpx;
+}
 
-  .open & { color: #000; }
-  .full & { color: #888; }
-  .ended & { color: #666; }
+.activity-cta.disabled {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.activity-cta-text {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #fff;
 }

@@ -5,7 +5,7 @@ import Taro from '@tarojs/taro';
 // 生产构建：https://api.digrunningclub.com（需替换为实际已备案域名）
 // 开发构建：http://192.168.1.5:3001
 declare const API_BASE_URL: string;
-export const BASE_URL: string = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'http://192.168.1.5:3001';
+export const BASE_URL: string = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'https://running.dingstock.net/api';
 
 export function getToken(): string {
   return Taro.getStorageSync('token') || '';
@@ -46,7 +46,7 @@ export function request<T = any>(options: RequestOptions): Promise<T> {
           resolve(res.data as T);
         } else if (res.statusCode === 401) {
           clearToken();
-          Taro.reLaunch({ url: '/pages/login/index' });
+          Taro.showToast({ title: '未授权，请检查 Token 配置', icon: 'none' });
           reject(new Error('Unauthorized'));
         } else {
           const msg = (res.data as any)?.message || '请求失败';
