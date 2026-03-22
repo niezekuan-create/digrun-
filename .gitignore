@@ -18,3 +18,7 @@ project.private.config.json
 
 # OS
 .DS_Store
+
+.home/
+_logs/
+**/_logs/

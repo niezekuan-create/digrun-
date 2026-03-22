@@ -1,4 +1,4 @@
-import { View, Text, Image } from '@tarojs/components'
+import { View, Text, Image, Button } from '@tarojs/components'
 import { useLoad } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import { useState } from 'react'
@@ -14,13 +14,25 @@ export default function LoginPage() {
     }
   })
 
-  const handleLogin = async () => {
+  const handleGetPhoneNumber = async (e: any) => {
     if (loading) return
+    if (e?.detail?.errMsg !== 'getPhoneNumber:ok') {
+      Taro.showToast({ title: '未授权手机号', icon: 'none' })
+      return
+    }
+    const phoneCode = e?.detail?.code
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('wx phone code:', phoneCode)
+    }
+    if (!phoneCode) {
+      Taro.showToast({ title: '获取 code 失败', icon: 'none' })
+      return
+    }
     setLoading(true)
     try {
-      await login()
+      await login(phoneCode)
       Taro.reLaunch({ url: '/pages/events/index' })
-    } catch (e) {
+    } catch (err) {
       Taro.showToast({ title: '登录失败，请重试', icon: 'none' })
     } finally {
       setLoading(false)
@@ -52,14 +64,16 @@ export default function LoginPage() {
 
         {/* 底部登录区 */}
         <View className='splash-bottom'>
-          <View
+          <Button
             className={`splash-btn ${loading ? 'loading' : ''}`}
-            onClick={handleLogin}
+            openType='getPhoneNumber'
+            onGetPhoneNumber={handleGetPhoneNumber}
+            disabled={loading}
           >
             <Text className='splash-btn-text'>
-              {loading ? '登录中...' : '微信一键登录'}
+              {loading ? '登录中...' : '微信一键登录（获取手机号）'}
             </Text>
-          </View>
+          </Button>
           <Text className='splash-hint'>登录即代表同意服务协议</Text>
         </View>
       </View>

@@ -1,5 +1,6 @@
 import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
+import { userManager } from '../../utils/request'
 import './index.scss'
 
 interface Props {
@@ -13,6 +14,14 @@ const tabs = [
 
 export default function BottomNav({ current }: Props) {
   const navigate = (path: string, key: string) => {
+    if (key === 'my') {
+      if (userManager.hasToken()) {
+        Taro.redirectTo({ url: path })
+      } else {
+        Taro.redirectTo({ url: '/pages/login/index' })
+      }
+      return
+    }
     if (key === current) return
     Taro.redirectTo({ url: path })
   }

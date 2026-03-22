@@ -1,5 +1,5 @@
 import Taro from '@tarojs/taro';
-import { request, setToken, clearToken } from './request';
+import { request, userManager } from './request';
 
 export interface UserInfo {
   id: number;
@@ -22,42 +22,41 @@ export function setUserInfo(user: UserInfo) {
 }
 
 export function isLoggedIn(): boolean {
-  return !!Taro.getStorageSync('token');
+  return userManager.hasToken();
 }
 
-function getStableDeviceId(): string {
-  let id = Taro.getStorageSync('_drc_device_id');
-  if (!id) {
-    id = 'drc_' + Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
-    Taro.setStorageSync('_drc_device_id', id);
-  }
-  return id;
-}
+export async function login(wxLoginCode: string): Promise<void> {
+  if (!wxLoginCode) throw new Error('no_wechat_phone_code');
 
-export async function login(): Promise<void> {
-  let code: string;
-  try {
-    const loginRes = await new Promise<Taro.login.SuccessCallbackResult>((resolve, reject) => {
-      Taro.login({ success: resolve, fail: reject });
-    });
-    code = loginRes.code;
-  } catch (e) {
-    code = 'dev_' + Date.now();
-  }
-
-  const deviceId = getStableDeviceId();
-  const res = await request<{ access_token: string; user: UserInfo }>({
-    url: '/auth/login',
+  const res: any = await request<any>({
+    url: '/auth/wechat/login',
     method: 'POST',
-    data: { code, device_id: deviceId },
+    data: {
+      wxLoginCode,
+      app: 'wechat',
+      sys: '0.0.1',
+      xgToken: '',
+      iosToken: '',
+    },
     auth: false,
   });
 
-  setToken(res.access_token);
-  setUserInfo(res.user);
+  if (res?.err) throw new Error('login_failed');
+
+  const token =
+    (typeof res?.data === 'string' ? res.data : '') ||
+    res?.access_token ||
+    res?.token ||
+    res?.data?.access_token ||
+    res?.data?.token;
+  if (!token) throw new Error('no_token');
+  userManager.setToken(token);
+
+  const user = res?.user || res?.data?.user;
+  if (user) setUserInfo(user);
 }
 
 export function logout() {
-  clearToken();
+  userManager.clearToken();
   Taro.reLaunch({ url: '/pages/login/index' });
 }

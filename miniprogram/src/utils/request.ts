@@ -7,17 +7,39 @@ import Taro from '@tarojs/taro';
 declare const API_BASE_URL: string;
 export const BASE_URL: string = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'https://running.dingstock.net/api';
 
+let cachedToken: string | null = null;
+
+export const userManager = {
+  getToken(): string {
+    if (cachedToken !== null) return cachedToken;
+    cachedToken = Taro.getStorageSync('token') || '';
+    return cachedToken;
+  },
+  hasToken(): boolean {
+    return !!userManager.getToken();
+  },
+  setToken(token: string) {
+    const next = token || '';
+    cachedToken = next;
+    Taro.setStorageSync('token', next);
+  },
+  clearToken() {
+    cachedToken = '';
+    Taro.removeStorageSync('token');
+    Taro.removeStorageSync('userInfo');
+  },
+};
+
 export function getToken(): string {
-  return Taro.getStorageSync('token') || '';
+  return userManager.getToken();
 }
 
 export function setToken(token: string) {
-  Taro.setStorageSync('token', token);
+  userManager.setToken(token);
 }
 
 export function clearToken() {
-  Taro.removeStorageSync('token');
-  Taro.removeStorageSync('userInfo');
+  userManager.clearToken();
 }
 
 interface RequestOptions {
