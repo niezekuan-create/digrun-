@@ -532,6 +532,7 @@ export default function AdminPage() {
           setUploadingCover(false)
         }
       },
+      fail: () => {},
     })
   }
 
@@ -564,6 +565,7 @@ export default function AdminPage() {
           setUploadingPodcastCover(false)
         }
       },
+      fail: () => {},
     })
   }
 

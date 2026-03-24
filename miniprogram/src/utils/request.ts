@@ -5,7 +5,7 @@ import Taro from '@tarojs/taro';
 // 生产构建：https://api.digrunningclub.com（需替换为实际已备案域名）
 // 开发构建：http://192.168.1.5:3001
 declare const API_BASE_URL: string;
-export const BASE_URL: string = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'https://running.dingstock.net/api';
+export const BASE_URL: string = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'https://running.dingstock.net';
 
 let cachedToken: string | null = null;
 

@@ -67,7 +67,26 @@
       "Bash(git init:*)",
       "Bash(/Users/niezekuan/Documents/CPTCODE/digrun小程序/.gitignore:*)",
       "Bash(git -C /Users/niezekuan/Documents/CPTCODE/digrun小程序 add .)",
-      "Bash(git -C /Users/niezekuan/Documents/CPTCODE/digrun小程序 status --short)"
+      "Bash(git -C /Users/niezekuan/Documents/CPTCODE/digrun小程序 status --short)",
+      "Bash(git -C /Users/niezekuan/Documents/CPTCODE/digrun小程序 remote add origin https://github.com/niezekuan-create/digrun-.git)",
+      "Bash(git -C /Users/niezekuan/Documents/CPTCODE/digrun小程序 push -u origin main)",
+      "Bash(ls ~/.ssh/*.pub)",
+      "Bash(cat ~/.ssh/*.pub)",
+      "Bash(ssh-keygen -t ed25519 -C \"niezekuan@github\" -f ~/.ssh/id_ed25519 -N \"\")",
+      "Bash(git -C /Users/niezekuan/Documents/CPTCODE/digrun小程序 remote set-url origin git@github.com:niezekuan-create/digrun-.git)",
+      "Bash(ssh -T git@github.com)",
+      "Bash(sed -i \"s|''''http://localhost:3001''''|''''http://192.168.1.5:3001''''|g\" /Users/niezekuan/Documents/CPTCODE/digrun小程序/miniprogram/src/pages/events/index.tsx /Users/niezekuan/Documents/CPTCODE/digrun小程序/miniprogram/src/pages/events/detail.tsx)",
+      "Bash(grep -rn \"localhost:3001\\\\|BASE_URL\" /Users/niezekuan/Documents/CPTCODE/digrun小程序/miniprogram/src/ --include=*.tsx)",
+      "Bash(curl -s http://192.168.1.5:3001/events)",
+      "Bash(grep -n \"from ''../../utils/request''\" /Users/niezekuan/Documents/CPTCODE/digrun小程序/miniprogram/src/pages/admin/index.tsx)",
+      "Bash(grep -n \"from ''../../utils/request''\" /Users/niezekuan/Documents/CPTCODE/digrun小程序/miniprogram/src/pages/points/mall.tsx)",
+      "Bash(grep -n \"from ''../../utils/request''\" /Users/niezekuan/Documents/CPTCODE/digrun小程序/miniprogram/src/pages/podcast/player.tsx)",
+      "Bash(grep -n \"from ''../../utils/request''\" /Users/niezekuan/Documents/CPTCODE/digrun小程序/miniprogram/src/pages/events/index.tsx)",
+      "Read(//Users/niezekuan/**)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(grep -r \"192.168\\\\|digrunningclub\" /Users/niezekuan/Documents/CPTCODE/digrun小程序/miniprogram/dist/ --include=*.js -l)"
     ]
   }
 }

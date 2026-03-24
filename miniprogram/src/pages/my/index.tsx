@@ -79,6 +79,7 @@ export default function MyPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [myRank, setMyRank] = useState<LeaderboardEntry | null>(null)
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<'events' | 'orders' | 'leaderboard'>('events')
   const [user, setUser] = useState(() => getUserInfo())
   const clubId = 'xbc3mQnYPR'
 
@@ -205,142 +206,154 @@ export default function MyPage() {
         </View>
       </View>
 
-      {/* ── 我的活动 ── */}
-      <View className='section-header'>
-        <Text className='section-title'>我的活动</Text>
+      {/* ── Tab 横向入口 ── */}
+      <View className='my-tabs'>
+        {(['events', 'orders', 'leaderboard'] as const).map(tab => (
+          <View
+            key={tab}
+            className={`my-tab${activeTab === tab ? ' my-tab-active' : ''}`}
+            onClick={() => setActiveTab(tab)}
+          >
+            <Text className='my-tab-text'>
+              {tab === 'events' ? '我的活动' : tab === 'orders' ? '兑换记录' : '积分排行榜'}
+            </Text>
+          </View>
+        ))}
       </View>
 
-      <View className='regs-content'>
-        {loading ? (
-          <View className='loading'>
-            <Text className='loading-text'>LOADING...</Text>
-          </View>
-        ) : regs.length === 0 ? (
-          <View className='empty'>
-            <Text className='empty-text'>暂无报名记录</Text>
-            <View className='go-events-btn' onClick={() => Taro.navigateTo({ url: '/pages/events/index' })}>
-              <Text className='go-events-text'>去报名活动</Text>
+      {/* ── Tab 内容区 ── */}
+      {activeTab === 'events' && (
+        <View className='regs-content'>
+          {loading ? (
+            <View className='loading'>
+              <Text className='loading-text'>LOADING...</Text>
             </View>
-          </View>
-        ) : (
-          <View className='regs-list'>
-            {regs.map((reg) => {
-              const statusInfo = STATUS_MAP[reg.status] || STATUS_MAP.pending
-              return (
-                <View key={reg.id} className='reg-card'>
-                  <View className='reg-card-top' onClick={() => reg.event && goEventDetail(reg.event.id)}>
-                    {/* 封面缩略图 */}
-                    <View className='reg-cover-wrap'>
-                      {reg.event?.cover_image ? (
-                        <Image src={`${BASE_URL}${reg.event.cover_image}`} className='reg-cover-img' mode='aspectFill' />
-                      ) : (
-                        <View className='reg-cover-placeholder' />
-                      )}
-                    </View>
-                    <View className='reg-event-info'>
-                      <Text className='reg-event-title'>{reg.event?.title || '活动'}</Text>
-                      <Text className='reg-event-date'>{reg.event ? formatDate(reg.event.date) : ''}</Text>
-                      <Text className='reg-event-loc'>📍 {reg.event?.location}</Text>
-                    </View>
-                    <View className={`reg-status ${statusInfo.cls}`}>
-                      <Text className='reg-status-text'>{statusInfo.label}</Text>
-                    </View>
-                  </View>
-
-                  <View className='reg-meta'>
-                    {reg.pace && <Text className='reg-tag'>{reg.pace}</Text>}
-                    {reg.distance && <Text className='reg-tag'>{reg.distance}</Text>}
-                    {reg.bag_storage && <Text className='reg-tag'>行李寄存</Text>}
-                    {reg.coffee && <Text className='reg-tag'>咖啡</Text>}
-                  </View>
-
-                  {(reg.status === 'pending' || reg.status === 'approved') && (
-                    <View className='reg-actions'>
-                      {reg.status === 'approved' && (
-                        <View className='reg-action' onClick={() => goCheckin(reg.id)}>
-                          <Text className='reg-action-text'>查看签到二维码 →</Text>
-                        </View>
-                      )}
-                      <View className='reg-cancel-btn' onClick={() => handleCancel(reg)}>
-                        <Text className='reg-cancel-text'>取消报名</Text>
+          ) : regs.length === 0 ? (
+            <View className='empty'>
+              <Text className='empty-text'>暂无报名记录</Text>
+              <View className='go-events-btn' onClick={() => Taro.navigateTo({ url: '/pages/events/index' })}>
+                <Text className='go-events-text'>去报名活动</Text>
+              </View>
+            </View>
+          ) : (
+            <View className='regs-list'>
+              {regs.map((reg) => {
+                const statusInfo = STATUS_MAP[reg.status] || STATUS_MAP.pending
+                return (
+                  <View key={reg.id} className='reg-card'>
+                    <View className='reg-card-top' onClick={() => reg.event && goEventDetail(reg.event.id)}>
+                      <View className='reg-cover-wrap'>
+                        {reg.event?.cover_image ? (
+                          <Image src={`${BASE_URL}${reg.event.cover_image}`} className='reg-cover-img' mode='aspectFill' />
+                        ) : (
+                          <View className='reg-cover-placeholder' />
+                        )}
+                      </View>
+                      <View className='reg-event-info'>
+                        <Text className='reg-event-title'>{reg.event?.title || '活动'}</Text>
+                        <Text className='reg-event-date'>{reg.event ? formatDate(reg.event.date) : ''}</Text>
+                        <Text className='reg-event-loc'>📍 {reg.event?.location}</Text>
+                      </View>
+                      <View className={`reg-status ${statusInfo.cls}`}>
+                        <Text className='reg-status-text'>{statusInfo.label}</Text>
                       </View>
                     </View>
-                  )}
-                </View>
-              )
-            })}
-          </View>
-        )}
-      </View>
 
-      {/* ── 兑换记录 ── */}
-      <View className='section-header'>
-        <Text className='section-title'>兑换记录</Text>
-      </View>
-      {orders.length === 0 ? (
-        <View className='section-empty'>
-          <Text className='empty-text'>暂无兑换记录</Text>
-        </View>
-      ) : (
-        <View className='orders-list'>
-          {orders.map(order => (
-            <View key={order.id} className='order-card'>
-              <View className='order-img-wrap'>
-                {order.product?.image ? (
-                  <Image src={`${BASE_URL}${order.product.image}`} className='order-img' mode='aspectFill' />
-                ) : (
-                  <View className='order-img-placeholder' />
-                )}
-              </View>
-              <View className='order-info'>
-                <Text className='order-name'>{order.product?.name}</Text>
-                {order.size && <Text className='order-meta'>尺码：{order.size}</Text>}
-                <Text className='order-meta'>{order.delivery_type === 'shipping' ? '邮寄' : '活动自提'}</Text>
-                <Text className='order-date'>{formatDate(order.created_at)}</Text>
-              </View>
-              <View className={`order-status order-status-${order.status}`}>
-                <Text className='order-status-text'>{ORDER_STATUS_LABEL[order.status] || order.status}</Text>
-              </View>
+                    <View className='reg-meta'>
+                      {reg.pace && <Text className='reg-tag'>{reg.pace}</Text>}
+                      {reg.distance && <Text className='reg-tag'>{reg.distance}</Text>}
+                      {reg.bag_storage && <Text className='reg-tag'>行李寄存</Text>}
+                      {reg.coffee && <Text className='reg-tag'>咖啡</Text>}
+                    </View>
+
+                    {(reg.status === 'pending' || reg.status === 'approved') && (
+                      <View className='reg-actions'>
+                        {reg.status === 'approved' && (
+                          <View className='reg-action' onClick={() => goCheckin(reg.id)}>
+                            <Text className='reg-action-text'>查看签到二维码 →</Text>
+                          </View>
+                        )}
+                        <View className='reg-cancel-btn' onClick={() => handleCancel(reg)}>
+                          <Text className='reg-cancel-text'>取消报名</Text>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                )
+              })}
             </View>
-          ))}
+          )}
         </View>
       )}
 
-      {/* ── 积分排行榜 ── */}
-      <View className='section-header'>
-        <Text className='section-title'>积分排行榜</Text>
-      </View>
-      {leaderboard.length === 0 ? (
-        <View className='section-empty'>
-          <Text className='empty-text'>暂无数据</Text>
-        </View>
-      ) : (
-        <View className='lb-list'>
-          {leaderboard.map(entry => {
-            const isMe = entry.userId === user?.id
-            return (
-              <View key={entry.userId} className={`lb-row${isMe ? ' lb-row-me' : ''}`}>
-                <Text className='lb-rank'>
-                  {entry.rank <= 3 ? MEDALS[entry.rank - 1] : entry.rank}
-                </Text>
-                <View className='lb-avatar-wrap'>
-                  {entry.avatar ? (
-                    <Image src={entry.avatar} className='lb-avatar' mode='aspectFill' />
-                  ) : (
-                    <View className='lb-avatar-placeholder'>
-                      <Text className='lb-avatar-text'>{entry.nickname?.[0] || '?'}</Text>
-                    </View>
-                  )}
+      {activeTab === 'orders' && (
+        <View className='tab-content'>
+          {orders.length === 0 ? (
+            <View className='section-empty'>
+              <Text className='empty-text'>暂无兑换记录</Text>
+            </View>
+          ) : (
+            <View className='orders-list'>
+              {orders.map(order => (
+                <View key={order.id} className='order-card'>
+                  <View className='order-img-wrap'>
+                    {order.product?.image ? (
+                      <Image src={`${BASE_URL}${order.product.image}`} className='order-img' mode='aspectFill' />
+                    ) : (
+                      <View className='order-img-placeholder' />
+                    )}
+                  </View>
+                  <View className='order-info'>
+                    <Text className='order-name'>{order.product?.name}</Text>
+                    {order.size && <Text className='order-meta'>尺码：{order.size}</Text>}
+                    <Text className='order-meta'>{order.delivery_type === 'shipping' ? '邮寄' : '活动自提'}</Text>
+                    <Text className='order-date'>{formatDate(order.created_at)}</Text>
+                  </View>
+                  <View className={`order-status order-status-${order.status}`}>
+                    <Text className='order-status-text'>{ORDER_STATUS_LABEL[order.status] || order.status}</Text>
+                  </View>
                 </View>
-                <Text className='lb-name'>{isMe ? `${entry.nickname} (我)` : entry.nickname}</Text>
-                <Text className='lb-count'>{entry.points_balance} 分</Text>
-              </View>
-            )
-          })}
-          {myRank && myRank.rank > 20 && (
-            <View className='lb-my-rank-row'>
-              <Text className='lb-my-rank-label'>我的排名</Text>
-              <Text className='lb-my-rank-val'>#{myRank.rank} · {myRank.points_balance} 分</Text>
+              ))}
+            </View>
+          )}
+        </View>
+      )}
+
+      {activeTab === 'leaderboard' && (
+        <View className='tab-content'>
+          {leaderboard.length === 0 ? (
+            <View className='section-empty'>
+              <Text className='empty-text'>暂无数据</Text>
+            </View>
+          ) : (
+            <View className='lb-list'>
+              {leaderboard.map(entry => {
+                const isMe = entry.userId === user?.id
+                return (
+                  <View key={entry.userId} className={`lb-row${isMe ? ' lb-row-me' : ''}`}>
+                    <Text className='lb-rank'>
+                      {entry.rank <= 3 ? MEDALS[entry.rank - 1] : entry.rank}
+                    </Text>
+                    <View className='lb-avatar-wrap'>
+                      {entry.avatar ? (
+                        <Image src={entry.avatar} className='lb-avatar' mode='aspectFill' />
+                      ) : (
+                        <View className='lb-avatar-placeholder'>
+                          <Text className='lb-avatar-text'>{entry.nickname?.[0] || '?'}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text className='lb-name'>{isMe ? `${entry.nickname} (我)` : entry.nickname}</Text>
+                    <Text className='lb-count'>{entry.points_balance} 分</Text>
+                  </View>
+                )
+              })}
+              {myRank && myRank.rank > 20 && (
+                <View className='lb-my-rank-row'>
+                  <Text className='lb-my-rank-label'>我的排名</Text>
+                  <Text className='lb-my-rank-val'>#{myRank.rank} · {myRank.points_balance} 分</Text>
+                </View>
+              )}
             </View>
           )}
         </View>
