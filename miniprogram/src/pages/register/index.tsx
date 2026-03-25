@@ -3,10 +3,11 @@ import { useLoad, useRouter } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import { useState } from 'react'
 import { request } from '../../utils/request'
+import { getMockActivityDetail } from '../../utils/mockData'
 import './index.scss'
 
 interface FieldConfig { key: string; label: string; enabled: boolean; required: boolean }
-interface EventDetail { id: number; title: string; form_config?: { fields: FieldConfig[] } }
+interface EventDetail { id: number | string; title: string; form_config?: { fields: FieldConfig[] } }
 
 const PACE_OPTIONS = ['4:00以内', '4:00-4:30', '4:30-5:00', '5:00-5:30', '5:30-6:00', '6:00以上']
 const DISTANCE_OPTIONS = ['5KM', '10KM', '半马', '全马', '其他']
@@ -24,14 +25,30 @@ export default function RegisterPage() {
   const [event, setEvent] = useState<EventDetail | null>(null)
   const [formData, setFormData] = useState<Record<string, any>>({})
   const [submitting, setSubmitting] = useState(false)
+  const [topPadding, setTopPadding] = useState(0)
 
   useLoad(async () => {
+    try {
+      const sys = Taro.getSystemInfoSync()
+      const menu = Taro.getMenuButtonBoundingClientRect?.()
+      const base = Math.max(sys?.statusBarHeight || 0, menu?.top || 0)
+      setTopPadding(base ? base + 8 : 44)
+    } catch (e) {
+      setTopPadding(44)
+    }
+
     if (!eventId) { Taro.navigateBack(); return }
     try {
-      const data = await request<EventDetail>({ url: `/events/${eventId}`, auth: false })
-      setEvent(data)
+      const data = await request<EventDetail>({ url: `/activities/detail/${eventId}`, auth: false })
+      const detail = (data as any)?.data ?? data
+      setEvent({ id: detail.id ?? eventId, title: detail.name ?? detail.title, form_config: detail.form_config })
     } catch (e) {
-      Taro.showToast({ title: '加载失败', icon: 'none' })
+      const mock = getMockActivityDetail(eventId)
+      if (mock) {
+        setEvent({ id: mock.data.id, title: mock.data.name })
+      } else {
+        Taro.showToast({ title: '活动不存在', icon: 'none' })
+      }
     }
   })
 
@@ -58,7 +75,7 @@ export default function RegisterPage() {
         url: '/registrations',
         method: 'POST',
         data: {
-          event_id: +eventId!,
+          activity_id: eventId,
           name: formData.name || undefined,
           phone: formData.phone || undefined,
           pace: formData.pace || undefined,
@@ -71,7 +88,12 @@ export default function RegisterPage() {
       Taro.showToast({ title: '报名成功！', icon: 'success' })
       setTimeout(() => Taro.navigateBack(), 1500)
     } catch (e: any) {
-      // request util already shows a toast for HTTP errors; show fallback for unexpected ones
+      if (e?.message === 'Unauthorized' && process.env.NODE_ENV !== 'production') {
+        // Dev 模式：mock token 被服务器拒绝，本地模拟报名成功
+        Taro.showToast({ title: '[DEV] 报名成功（模拟）', icon: 'success' })
+        setTimeout(() => Taro.navigateBack(), 1500)
+        return
+      }
       if (!e?.message || e.message === 'Network Error') {
         Taro.showToast({ title: '报名失败，请重试', icon: 'none' })
       }
@@ -84,35 +106,33 @@ export default function RegisterPage() {
     const val = formData[field.key]
     const label = `${field.label}${field.required ? ' *' : ''}`
 
-    // Toggle fields (boolean)
     if (['bag_storage', 'supply', 'coffee'].includes(field.key)) {
       return (
         <View key={field.key} className='input-row'>
           <Text className='input-label'>{label}</Text>
           <View
-            style={`padding:8rpx 24rpx;border-radius:4rpx;border:1rpx solid ${val ? '#fff' : '#333'};background:${val ? '#fff' : 'transparent'};`}
+            className={`toggle-chip${val ? ' toggle-chip-on' : ''}`}
             onClick={() => setValue(field.key, !val)}
           >
-            <Text style={`font-size:24rpx;color:${val ? '#000' : '#555'};`}>{val ? '是' : '否'}</Text>
+            <Text className='toggle-chip-text'>{val ? '是' : '否'}</Text>
           </View>
         </View>
       )
     }
 
-    // Pace selector
     if (field.key === 'pace') {
       return (
-        <View key={field.key} className='input-row'>
+        <View key={field.key} className='input-row input-row-col'>
           <Text className='input-label'>{label}</Text>
-          <ScrollView scrollX style='flex:1;'>
-            <View style='display:flex;gap:12rpx;padding:4rpx 0;'>
+          <ScrollView scrollX className='chip-scroll'>
+            <View className='chip-row'>
               {PACE_OPTIONS.map(p => (
                 <View
                   key={p}
-                  style={`padding:8rpx 20rpx;border-radius:4rpx;white-space:nowrap;border:1rpx solid ${val === p ? '#fff' : '#333'};background:${val === p ? '#fff' : 'transparent'};flex-shrink:0;`}
+                  className={`chip${val === p ? ' chip-on' : ''}`}
                   onClick={() => setValue('pace', val === p ? '' : p)}
                 >
-                  <Text style={`font-size:22rpx;color:${val === p ? '#000' : '#666'};`}>{p}</Text>
+                  <Text className='chip-text'>{p}</Text>
                 </View>
               ))}
             </View>
@@ -121,19 +141,18 @@ export default function RegisterPage() {
       )
     }
 
-    // Distance selector
     if (field.key === 'distance') {
       return (
-        <View key={field.key} className='input-row'>
+        <View key={field.key} className='input-row input-row-col'>
           <Text className='input-label'>{label}</Text>
-          <View style='display:flex;gap:12rpx;flex-wrap:wrap;flex:1;justify-content:flex-end;'>
+          <View className='chip-wrap'>
             {DISTANCE_OPTIONS.map(d => (
               <View
                 key={d}
-                style={`padding:8rpx 20rpx;border-radius:4rpx;border:1rpx solid ${val === d ? '#fff' : '#333'};background:${val === d ? '#fff' : 'transparent'};`}
+                className={`chip${val === d ? ' chip-on' : ''}`}
                 onClick={() => setValue('distance', val === d ? '' : d)}
               >
-                <Text style={`font-size:22rpx;color:${val === d ? '#000' : '#666'};`}>{d}</Text>
+                <Text className='chip-text'>{d}</Text>
               </View>
             ))}
           </View>
@@ -141,7 +160,6 @@ export default function RegisterPage() {
       )
     }
 
-    // Default: text input
     return (
       <View key={field.key} className='input-row'>
         <Text className='input-label'>{label}</Text>
@@ -164,8 +182,8 @@ export default function RegisterPage() {
   if (!event) {
     return (
       <View className='register-page'>
-        <View style='flex:1;display:flex;align-items:center;justify-content:center;'>
-          <Text style='color:#555;font-size:28rpx;'>加载中...</Text>
+        <View className='loading-wrap'>
+          <Text className='loading-text'>LOADING...</Text>
         </View>
       </View>
     )
@@ -175,27 +193,31 @@ export default function RegisterPage() {
 
   return (
     <View className='register-page'>
+      <View className='reg-topbar' style={{ paddingTop: `${topPadding}px` }}>
+        <View className='topbar-back' onClick={() => Taro.navigateBack()}>
+          <Text className='topbar-back-icon'>←</Text>
+        </View>
+      </View>
+
       <View className='reg-header'>
-        <Text className='reg-title'>REGISTER</Text>
-        <Text className='reg-sub'>{event.title}</Text>
+        <Text className='reg-label'>REGISTER</Text>
+        <Text className='reg-title'>{event.title}</Text>
       </View>
 
       <ScrollView scrollY className='reg-scroll'>
         <View className='reg-body'>
-          <View className='section'>
-            <View className='input-group'>
-              {fields.map((field, idx) => (
-                <View key={field.key}>
-                  {renderField(field)}
-                  {idx < fields.length - 1 && <View className='input-divider' />}
-                </View>
-              ))}
-            </View>
+          <View className='input-group'>
+            {fields.map((field, idx) => (
+              <View key={field.key}>
+                {renderField(field)}
+                {idx < fields.length - 1 && <View className='input-divider' />}
+              </View>
+            ))}
           </View>
 
           <View className='submit-section'>
-            <View className={`reg-submit-btn ${submitting ? 'loading' : ''}`} onClick={handleSubmit}>
-              <Text className='reg-submit-text'>{submitting ? '提交中...' : '确认报名'}</Text>
+            <View className={`reg-submit-btn${submitting ? ' loading' : ''}`} onClick={handleSubmit}>
+              <Text className='reg-submit-text'>{submitting ? 'SUBMITTING...' : 'CONFIRM'}</Text>
             </View>
           </View>
         </View>

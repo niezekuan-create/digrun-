@@ -13,10 +13,6 @@ interface ApiRes<T> {
   msg?: string
 }
 
-interface UserPointsInfo {
-  points_balance: number
-}
-
 interface Registration {
   id: number
   status: string
@@ -112,16 +108,22 @@ export default function MyPage() {
       }
     }
 
+    // 我的报名记录
+    request<Registration[]>({ url: '/registrations/my' })
+      .then(setRegs)
+      .catch(() => {})
+
     // 兑换记录
     request<PointsOrder[]>({ url: '/points/orders' })
       .then(setOrders)
       .catch(() => {})
 
     // 积分排行榜
-    request<LeaderboardEntry[]>({ url: '/leaderboard/points' })
+    request<LeaderboardEntry[]>({ url: '/leaderboard/points', auth: false })
       .then(data => {
         setLeaderboard(data.slice(0, 20))
-        const me = data.find(e => e.userId === user?.id)
+        const currentUserId = getUserInfo()?.id
+        const me = currentUserId ? data.find(e => e.userId === currentUserId) : undefined
         setMyRank(me || null)
       })
       .catch(() => {})
@@ -133,8 +135,8 @@ export default function MyPage() {
     Taro.navigateTo({ url: `/pages/checkin/index?id=${regId}` })
   }
 
-  const goEventDetail = (eventId: number) => {
-    Taro.navigateTo({ url: `/pages/events/detail?id=${eventId}` })
+  const goEventDetail = (eventId: number | string) => {
+    Taro.navigateTo({ url: `/pages/events/detail?activityId=${eventId}` })
   }
 
   const formatDate = (dateStr: string) => {
@@ -142,8 +144,6 @@ export default function MyPage() {
     return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`
   }
 
-  const checkinCount = regs.filter(r => r.status === 'checked_in').length
-  const activeCount = regs.filter(r => r.status !== 'cancelled' && r.status !== 'rejected').length
   const goAdmin = () => Taro.navigateTo({ url: '/pages/admin/index' })
 
   const handleCancel = (reg: Registration) => {

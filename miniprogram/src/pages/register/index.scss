@@ -1,238 +1,217 @@
 page {
   height: 100%;
-  background: #000;
+  background: #0a0a0a;
 }
 
 .register-page {
   height: 100%;
-  background: #000;
+  background: #0a0a0a;
   display: flex;
   flex-direction: column;
 }
 
+// ── Topbar ─────────────────────────────────────────
+.reg-topbar {
+  padding-left: 32rpx;
+  padding-bottom: 8rpx;
+}
+
+.topbar-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64rpx;
+  height: 64rpx;
+}
+
+.topbar-back-icon {
+  font-size: 36rpx;
+  color: #fff;
+}
+
+// ── Header ─────────────────────────────────────────
 .reg-header {
-  padding: 48rpx 40rpx 32rpx;
-  border-bottom: 1rpx solid #1a1a1a;
+  padding: 16rpx 40rpx 40rpx;
+}
+
+.reg-label {
+  display: block;
+  font-size: 20rpx;
+  color: #444;
+  letter-spacing: 6px;
+  font-weight: 700;
+  margin-bottom: 12rpx;
 }
 
 .reg-title {
   display: block;
-  font-size: 56rpx;
+  font-size: 44rpx;
   font-weight: 900;
   color: #fff;
-  letter-spacing: 6px;
+  letter-spacing: 2px;
+  line-height: 1.2;
 }
 
-.reg-sub {
-  display: block;
-  font-size: 22rpx;
-  color: #555;
-  letter-spacing: 4px;
-  margin-top: 4rpx;
-}
-
+// ── Scroll ─────────────────────────────────────────
 .reg-scroll {
   flex: 1;
-  height: 0; // flex child needs explicit height to scroll
+  height: 0;
 }
 
 .reg-body {
-  padding: 32rpx 40rpx 48rpx;
+  padding: 8rpx 40rpx 80rpx;
 }
 
-.section {
-  margin-bottom: 48rpx;
-}
-
-.section-label {
-  display: block;
-  font-size: 22rpx;
-  color: #666;
-  letter-spacing: 3px;
-  margin-bottom: 20rpx;
-  font-weight: 600;
-}
-
-.section-optional {
-  font-size: 20rpx;
-  color: #444;
-  font-weight: 400;
-  letter-spacing: 1px;
-}
-
+// ── Input group ────────────────────────────────────
 .input-group {
   background: #111;
-  border-radius: 16rpx;
-  padding: 0 28rpx;
+  border-radius: 20rpx;
+  padding: 0 32rpx;
+  border: 1rpx solid #1c1c1c;
 }
 
 .input-row {
   display: flex;
   align-items: center;
-  padding: 28rpx 0;
-  gap: 20rpx;
+  padding: 32rpx 0;
+  gap: 24rpx;
+
+  &.input-row-col {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20rpx;
+  }
 }
 
 .input-label {
   font-size: 26rpx;
-  color: #888;
-  min-width: 80rpx;
+  color: #666;
+  min-width: 96rpx;
   flex-shrink: 0;
+  letter-spacing: 1px;
 }
 
 .text-input {
   flex: 1;
   font-size: 28rpx;
   color: #fff;
+  text-align: right;
 }
 
 .input-placeholder {
-  color: #444;
+  color: #333;
 }
 
 .input-divider {
   height: 1rpx;
-  background: #1a1a1a;
+  background: #1c1c1c;
 }
 
-.option-grid {
+// ── Chips (pace / distance) ────────────────────────
+.chip-scroll {
+  width: 100%;
+}
+
+.chip-row {
+  display: flex;
+  gap: 14rpx;
+  padding-bottom: 4rpx;
+  white-space: nowrap;
+}
+
+.chip-wrap {
   display: flex;
   flex-wrap: wrap;
-  gap: 16rpx;
+  gap: 14rpx;
 }
 
-.option-item {
-  padding: 16rpx 24rpx;
-  border: 1rpx solid #333;
-  border-radius: 8rpx;
-  min-width: 180rpx;
-  text-align: center;
+.chip {
+  padding: 10rpx 24rpx;
+  border-radius: 6rpx;
+  border: 1rpx solid #2a2a2a;
+  background: transparent;
+  flex-shrink: 0;
 
-  &.selected {
+  &.chip-on {
     background: #fff;
     border-color: #fff;
   }
 }
 
-.option-text {
-  font-size: 26rpx;
-  color: #999;
+.chip-text {
+  font-size: 24rpx;
+  color: #555;
   letter-spacing: 1px;
 
-  .selected & { color: #000; font-weight: 700; }
+  .chip-on & {
+    color: #000;
+    font-weight: 700;
+  }
 }
 
-.option-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
-}
+// ── Toggle chip (yes/no) ───────────────────────────
+.toggle-chip {
+  padding: 10rpx 32rpx;
+  border-radius: 6rpx;
+  border: 1rpx solid #2a2a2a;
+  background: transparent;
+  margin-left: auto;
 
-.option-pill {
-  padding: 16rpx 32rpx;
-  border: 1rpx solid #333;
-  border-radius: 50rpx;
-
-  &.selected {
+  &.toggle-chip-on {
     background: #fff;
     border-color: #fff;
   }
 }
 
-.option-pill-text {
-  font-size: 26rpx;
-  font-weight: 700;
-  color: #888;
-  letter-spacing: 2px;
-
-  .selected & { color: #000; }
-}
-
-.toggle-row {
-  background: #111;
-  border-radius: 16rpx;
-  padding: 0 32rpx;
-}
-
-.toggle-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 28rpx 0;
-}
-
-.toggle-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4rpx;
-}
-
-.toggle-name {
-  font-size: 28rpx;
-  color: #fff;
-  font-weight: 600;
-}
-
-.toggle-desc {
-  font-size: 22rpx;
+.toggle-chip-text {
+  font-size: 24rpx;
   color: #555;
+
+  .toggle-chip-on & {
+    color: #000;
+    font-weight: 700;
+  }
 }
 
-.divider {
-  height: 1rpx;
-  background: #1a1a1a;
-}
-
+// ── Submit ─────────────────────────────────────────
 .submit-section {
   margin-top: 48rpx;
 }
 
 .reg-submit-btn {
-  height: 96rpx;
+  height: 100rpx;
   background: #fff;
-  border-radius: 8rpx;
+  border-radius: 12rpx;
   display: flex;
   align-items: center;
   justify-content: center;
 
   &.loading {
-    background: #333;
+    background: #1c1c1c;
   }
 }
 
 .reg-submit-text {
-  font-size: 30rpx;
-  font-weight: 700;
+  font-size: 28rpx;
+  font-weight: 900;
   color: #000;
-  letter-spacing: 3px;
+  letter-spacing: 5px;
 
-  .loading & { color: #666; }
-}
-
-.reg-footer {
-  padding: 24rpx 40rpx;
-  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-  border-top: 1rpx solid #1a1a1a;
-}
-
-.submit-btn {
-  height: 96rpx;
-  background: #fff;
-  border-radius: 8rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &.disabled {
-    background: #333;
+  .loading & {
+    color: #444;
   }
 }
 
-.submit-text {
-  font-size: 30rpx;
-  font-weight: 700;
-  color: #000;
-  letter-spacing: 3px;
+// ── Loading state ──────────────────────────────────
+.loading-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-  .disabled & { color: #666; }
+.loading-text {
+  font-size: 24rpx;
+  color: #444;
+  letter-spacing: 4px;
 }

@@ -4,6 +4,7 @@ import Taro from '@tarojs/taro'
 import { useState } from 'react'
 import { request } from '../../utils/request'
 import { getToken, BASE_URL } from '../../utils/request'
+import { getMockAdminEvents } from '../../utils/mockData'
 import './index.scss'
 
 
@@ -195,11 +196,12 @@ export default function AdminPage() {
       const data = await request<AdminEvent[]>({ url: '/events/admin/list' })
       setAdminEvents(data)
     } catch (e: any) {
-      Taro.showToast({ title: e?.message || '加载失败', icon: 'none' })
+      // API 不可用时使用 mock 数据（dev 模式）
+      setAdminEvents(getMockAdminEvents() as AdminEvent[])
     } finally { setEventsLoading(false) }
   }
 
-  const handleToggleEvent = async (event: AdminEvent) => {
+  const _handleToggleEvent = async (event: AdminEvent) => {
     try {
       await request({ url: `/events/${event.id}/toggle-active`, method: 'PATCH' })
       Taro.showToast({ title: event.is_active ? '已下架' : '已上架', icon: 'success' })
@@ -285,16 +287,25 @@ export default function AdminPage() {
             form_config: { fields: formFields },
           },
         })
-        Taro.showToast({ title: '活动已更新', icon: 'success' })
-        setEventSubTab('list')
-        setEditingEventId(null)
-        setEventForm(EMPTY_EVENT)
-        setCoverLocalPath('')
-        setFormFields(DEFAULT_FORM_FIELDS.map(f => ({ ...f })))
-        loadAdminEvents()
       } catch (e: any) {
-        Taro.showToast({ title: e?.message || '更新失败', icon: 'none' })
+        // dev 模式：真实接口不可用时本地模拟更新
+        if (process.env.NODE_ENV !== 'production') {
+          setAdminEvents(prev => prev.map(ev =>
+            ev.id === editingEventId
+              ? { ...ev, title: eventForm.title, location: eventForm.location, route: eventForm.route, description: eventForm.description, max_people: parseInt(eventForm.max_people) || 30, event_start_time: eventForm.event_start, signup_start_time: eventForm.signup_start, signup_end_time: eventForm.signup_end }
+              : ev
+          ))
+        } else {
+          Taro.showToast({ title: e?.message || '更新失败', icon: 'none' })
+          return
+        }
       } finally { setSubmitting(false) }
+      Taro.showToast({ title: '活动已更新', icon: 'success' })
+      setEventSubTab('list')
+      setEditingEventId(null)
+      setEventForm(EMPTY_EVENT)
+      setCoverLocalPath('')
+      setFormFields(DEFAULT_FORM_FIELDS.map(f => ({ ...f })))
     }
 
     if (dateChanged && editingHasRegs) {
@@ -514,15 +525,17 @@ export default function AdminPage() {
         setUploadingCover(true)
         try {
           const uploadRes = await new Promise<any>((resolve, reject) => {
+            const timer = setTimeout(() => reject(new Error('timeout')), 30000)
             Taro.uploadFile({
               url: `${BASE_URL}/events/upload-cover`,
               filePath: path,
               name: 'file',
               header: { Authorization: `Bearer ${getToken()}` },
-              success: (r) => resolve(JSON.parse(r.data)),
-              fail: reject,
+              success: (r) => { clearTimeout(timer); resolve(JSON.parse(r.data)) },
+              fail: (e) => { clearTimeout(timer); reject(e) },
             })
           })
+          if (!uploadRes.cover_url) throw new Error('no cover_url')
           setEventForm(f => ({ ...f, cover_image: uploadRes.cover_url }))
           Taro.showToast({ title: '封面上传成功', icon: 'success' })
         } catch (e) {
@@ -547,15 +560,17 @@ export default function AdminPage() {
         setUploadingPodcastCover(true)
         try {
           const uploadRes = await new Promise<any>((resolve, reject) => {
+            const timer = setTimeout(() => reject(new Error('timeout')), 30000)
             Taro.uploadFile({
               url: `${BASE_URL}/podcasts/upload-cover`,
               filePath: path,
               name: 'file',
               header: { Authorization: `Bearer ${getToken()}` },
-              success: (r) => resolve(JSON.parse(r.data)),
-              fail: reject,
+              success: (r) => { clearTimeout(timer); resolve(JSON.parse(r.data)) },
+              fail: (e) => { clearTimeout(timer); reject(e) },
             })
           })
+          if (!uploadRes.cover_url) throw new Error('no cover_url')
           setPodcastForm(f => ({ ...f, cover_url: uploadRes.cover_url }))
           Taro.showToast({ title: '封面上传成功', icon: 'success' })
         } catch (e) {

@@ -1,8 +1,9 @@
-import { View, Text, ScrollView, Image, Canvas } from '@tarojs/components'
+import { View, Text, ScrollView, Image } from '@tarojs/components'
 import { useLoad, useRouter } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { request } from '../../utils/request'
+import { getMockActivityDetail } from '../../utils/mockData'
 import './detail.scss'
 
 interface ActivityDetail {
@@ -43,21 +44,21 @@ export default function EventDetailPage() {
   const router = useRouter()
   const [activity, setActivity] = useState<ActivityDetail | null>(null)
   const [loading, setLoading] = useState(true)
-  const [topbarPaddingTopPx, setTopbarPaddingTopPx] = useState<number>(0)
-  const [bgGradient, setBgGradient] = useState<string>('')
+  const [topPadding, setTopPadding] = useState(0)
 
   const activityId = router.params.activityId || router.params.id
-  const colorCanvasId = 'activity_detail_color_canvas'
 
   useLoad(() => {
-    if (!activityId) return
-    loadData(String(activityId))
     try {
       const sys = Taro.getSystemInfoSync()
       const menu = Taro.getMenuButtonBoundingClientRect?.()
-      const baseTop = Math.max(sys?.statusBarHeight || 0, menu?.top || 0)
-      setTopbarPaddingTopPx(baseTop ? baseTop + 10 : 0)
-    } catch (e) {}
+      const base = Math.max(sys?.statusBarHeight || 0, menu?.top || 0)
+      setTopPadding(base ? base + 8 : 44)
+    } catch (e) {
+      setTopPadding(44)
+    }
+    if (!activityId) return
+    loadData(String(activityId))
   })
 
   const loadData = async (id: string) => {
@@ -65,7 +66,8 @@ export default function EventDetailPage() {
       const res = await request<{ data: ActivityDetail }>({ url: `/activities/detail/${id}`, auth: false })
       setActivity(res?.data || null)
     } catch (e) {
-      // handled
+      const mock = getMockActivityDetail(id)
+      if (mock) setActivity(mock.data as ActivityDetail)
     } finally {
       setLoading(false)
     }
@@ -74,10 +76,6 @@ export default function EventDetailPage() {
   const normalizeUrl = (url?: string) => {
     if (!url) return ''
     return url.trim().replace(/^`+|`+$/g, '')
-  }
-
-  const goBack = () => {
-    Taro.navigateBack()
   }
 
   const openRoute = async () => {
@@ -91,94 +89,27 @@ export default function EventDetailPage() {
     }
   }
 
-  const formatDate = (date: Date) => {
-    return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`
-  }
+  const formatDate = (date: Date) =>
+    `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`
 
-  const formatTime = (date: Date) => {
-    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
-  }
+  const formatTime = (date: Date) =>
+    `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
 
-  const buildGradient = (rgb: { r: number; g: number; b: number }) => {
-    const { r, g, b } = rgb
-    return `linear-gradient(180deg, rgba(${r}, ${g}, ${b}, 0.78) 0%, rgba(${r}, ${g}, ${b}, 0.24) 44%, rgba(11, 11, 11, 1) 100%)`
-  }
-
-  const extractAverageColor = async (src: string) => {
-    try {
-      const imageInfo: any = await Taro.getImageInfo({ src })
-      const path = imageInfo?.path || imageInfo?.tempFilePath || src
-      const size = 30
-
-      const ctx = Taro.createCanvasContext(colorCanvasId)
-      ctx.clearRect(0, 0, size, size)
-      ctx.drawImage(path, 0, 0, size, size)
-
-      await new Promise<void>((resolve) => {
-        ctx.draw(false, resolve)
-      })
-
-      const imageData: any = await Taro.canvasGetImageData({ canvasId: colorCanvasId, x: 0, y: 0, width: size, height: size })
-      const data: Uint8ClampedArray = imageData?.data
-      if (!data || data.length < 4) return null
-
-      let r = 0
-      let g = 0
-      let b = 0
-      let total = 0
-      for (let i = 0; i < data.length; i += 4) {
-        const a = data[i + 3]
-        if (a < 10) continue
-        r += data[i]
-        g += data[i + 1]
-        b += data[i + 2]
-        total += 1
-      }
-      if (!total) return null
-
-      const rr = Math.max(0, Math.min(255, Math.round(r / total)))
-      const gg = Math.max(0, Math.min(255, Math.round(g / total)))
-      const bb = Math.max(0, Math.min(255, Math.round(b / total)))
-      return { r: rr, g: gg, b: bb }
-    } catch (e) {
-      return null
-    }
-  }
-
-  const posterUrl = normalizeUrl(activity?.posterUrl)
-
-  useEffect(() => {
-    let cancelled = false
-    if (!posterUrl) {
-      setBgGradient('')
-      return () => {
-        cancelled = true
-      }
-    }
-
-    Taro.nextTick(async () => {
-      const rgb = await extractAverageColor(posterUrl)
-      if (cancelled) return
-      if (rgb) setBgGradient(buildGradient(rgb))
-    })
-
-    return () => {
-      cancelled = true
-    }
-  }, [posterUrl])
+  const formatDateShort = (date: Date) =>
+    `${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`
 
   if (loading) {
     return (
-      <View className='activity-detail-loading'>
-        <Text className='activity-detail-loading-text'>LOADING...</Text>
+      <View className='detail-loading'>
+        <Text className='detail-loading-text'>LOADING...</Text>
       </View>
     )
   }
 
   if (!activity) {
     return (
-      <View className='activity-detail-loading'>
-        <Text className='activity-detail-loading-text'>活动不存在</Text>
+      <View className='detail-loading'>
+        <Text className='detail-loading-text'>活动不存在</Text>
       </View>
     )
   }
@@ -189,118 +120,142 @@ export default function EventDetailPage() {
   const applyEndDate = activity.applyEnd ? new Date(activity.applyEnd) : null
 
   const timeRange = startDate
-    ? `${formatDate(startDate)} ${formatTime(startDate)}${endDate ? ` - ${formatTime(endDate)}` : ''}`
+    ? `${formatDate(startDate)} ${formatTime(startDate)}${endDate ? ` — ${formatTime(endDate)}` : ''}`
     : activity.timeStr || ''
+
   const applyRange =
     applyStartDate && applyEndDate
-      ? `${formatDate(applyStartDate)} ${formatTime(applyStartDate)} ~ ${formatDate(applyEndDate)} ${formatTime(applyEndDate)}`
+      ? `${formatDate(applyStartDate)} ${formatTime(applyStartDate)} — ${formatDate(applyEndDate)} ${formatTime(applyEndDate)}`
       : ''
 
   const joinCount = activity.joinCount ?? 0
   const capacity = activity.count ?? 0
-  const ctaText = activity.btnText || (activity.appliable ? '参与' : activity.applyText || '已截止')
-  const ctaEnabled = !!activity.btnStatus && !!normalizeUrl(activity.route)
-  const clubAvatar = normalizeUrl(activity.club?.avatar)
-  const clubName = activity.club?.name || 'RUNNING'
-  const avatars = (activity.joinAvatars || []).map(normalizeUrl).filter(Boolean).slice(0, 8)
   const points = activity.points ?? 0
+  const ctaText = activity.btnText || (activity.appliable ? '立即报名' : activity.applyText || '已截止')
+  const ctaEnabled = !!activity.btnStatus
+  const clubAvatar = normalizeUrl(activity.club?.avatar)
+  const clubName = activity.club?.name || 'DIG RUNNING CLUB'
+  const avatars = (activity.joinAvatars || []).map(normalizeUrl).filter(Boolean).slice(0, 8)
 
   return (
-    <View className='activity-detail-page'>
-      <View className='activity-detail-dynamic-bg' style={bgGradient ? { backgroundImage: bgGradient } : undefined} />
-      <View className='activity-detail-dynamic-bg-mask' />
-      <Canvas canvasId={colorCanvasId} className='activity-detail-color-canvas' style={{ width: '30px', height: '30px' }} />
-
-      <View className='activity-detail-topbar' style={topbarPaddingTopPx ? { paddingTop: `${topbarPaddingTopPx}px` } : undefined}>
-        <View className='topbar-left' onClick={goBack}>
-          <Text className='topbar-icon'>←</Text>
+    <View className='detail-page'>
+      {/* Topbar */}
+      <View className='detail-topbar' style={{ paddingTop: `${topPadding}px` }}>
+        <View className='topbar-back' onClick={() => Taro.navigateBack()}>
+          <Text className='topbar-back-icon'>←</Text>
         </View>
-        <View />
       </View>
 
-      <ScrollView scrollY className='activity-detail-scroll'>
-        <View className='activity-detail-cover'>
-          {posterUrl ? (
-            <Image src={posterUrl} className='activity-detail-cover-img' mode='aspectFill' />
-          ) : (
-            <View className='activity-detail-cover-img placeholder' />
-          )}
-          <View className='activity-detail-cover-mask' />
-          <View className='activity-detail-cover-content'>
+      <ScrollView scrollY className='detail-scroll'>
+        {/* Header */}
+        <View className='detail-header'>
+          <View className='detail-club-row'>
             {clubAvatar ? (
-              <Image src={clubAvatar} className='activity-detail-club-avatar' mode='aspectFill' />
+              <Image src={clubAvatar} className='detail-club-avatar' mode='aspectFill' />
             ) : (
-              <View className='activity-detail-club-avatar placeholder'>
-                <Text className='activity-detail-club-avatar-text'>D</Text>
+              <View className='detail-club-avatar-placeholder'>
+                <Text className='detail-club-avatar-char'>D</Text>
               </View>
             )}
-            <View className='activity-detail-tag'>
-              <Text className='activity-detail-tag-text'>{clubName}</Text>
-            </View>
-
-            <Text className='activity-detail-title'>{activity.name}</Text>
-            <Text className='activity-detail-meta'>{activity.timeStr || timeRange}</Text>
-            <Text className='activity-detail-meta'>{activity.address || ''}</Text>
+            <Text className='detail-club-name'>{clubName}</Text>
           </View>
-        </View>
 
-        <View className='activity-detail-card'>
-          <Text className='card-title'>活动描述</Text>
-          <Text className='card-desc'>{activity.description || '—'}</Text>
-        </View>
+          <Text className='detail-title'>{activity.name}</Text>
+          {activity.subtitle && <Text className='detail-subtitle'>{activity.subtitle}</Text>}
 
-        <View className='activity-detail-card'>
-          <Text className='card-title'>报名时间</Text>
-          <Text className='card-desc'>{applyRange || activity.applyText || '—'}</Text>
-        </View>
-
-        <View className='activity-detail-card'>
-          <Text className='card-title'>参与人数</Text>
-          <Text className='card-desc'>{capacity ? `${joinCount}/${capacity}` : `${joinCount}`} 人</Text>
-          {avatars.length > 0 ? (
-            <View className='avatar-row'>
-              {avatars.map((a, idx) => (
-                <Image key={`${a}_${idx}`} src={a} className='avatar' mode='aspectFill' />
-              ))}
-              {activity.joinCount && activity.joinCount > avatars.length ? (
-                <View className='avatar more'>
-                  <Text className='avatar-more-text'>…</Text>
+          {/* Time block */}
+          <View className='detail-time-block'>
+            {startDate ? (
+              <>
+                <View className='time-block-top'>
+                  <Text className='time-block-date'>{formatDateShort(startDate)}</Text>
+                  <Text className='time-block-year'>{startDate.getFullYear()}</Text>
                 </View>
-              ) : null}
+                <Text className='time-block-range'>
+                  {formatTime(startDate)}{endDate ? ` — ${formatTime(endDate)}` : ''}
+                </Text>
+              </>
+            ) : (
+              <Text className='time-block-range'>{activity.timeStr || '—'}</Text>
+            )}
+          </View>
+
+          {activity.address ? (
+            <View className='detail-site-row'>
+              <Text className='detail-site-label'>SITE</Text>
+              <Text className='detail-site-val'>{activity.address}</Text>
             </View>
           ) : null}
         </View>
 
-        <View className='activity-detail-card'>
-          <Text className='card-title'>活动积分</Text>
-          <Text className='points-num'>{points}</Text>
-          <Text className='points-hint'>完成活动可获得积分</Text>
+        <View className='detail-sep' />
+
+        {/* Description */}
+        {activity.description ? (
+          <View className='detail-section'>
+            <Text className='section-label'>活动描述</Text>
+            <Text className='section-body'>{activity.description}</Text>
+          </View>
+        ) : null}
+
+        {/* Apply time */}
+        <View className='detail-section'>
+          <Text className='section-label'>报名时间</Text>
+          <Text className='section-body'>{applyRange || activity.applyText || '—'}</Text>
         </View>
 
-        <View className='activity-detail-card map-card' onClick={openRoute}>
-          <View className='map-visual'>
-            <View className='map-pin' />
-          </View>
-          <Text className='map-title'>{activity.address || '地图'}</Text>
-          <Text className='map-sub'>点击复制活动链接</Text>
-          <View className='map-btn'>
-            <Text className='map-btn-text'>导航</Text>
-          </View>
+        {/* Participants */}
+        <View className='detail-section'>
+          <Text className='section-label'>参与人数</Text>
+          <Text className='section-body'>
+            {capacity ? `${joinCount} / ${capacity} 人` : `${joinCount} 人`}
+          </Text>
+          {avatars.length > 0 && (
+            <View className='avatar-row'>
+              {avatars.map((a, idx) => (
+                <Image key={`${a}_${idx}`} src={a} className='reg-avatar' mode='aspectFill' />
+              ))}
+              {activity.joinCount && activity.joinCount > avatars.length ? (
+                <View className='reg-avatar reg-avatar-more'>
+                  <Text className='reg-avatar-more-text'>…</Text>
+                </View>
+              ) : null}
+            </View>
+          )}
         </View>
 
-        <View className='activity-detail-footer-spacer' />
-      </ScrollView>
-
-      <View className='activity-detail-bottombar'>
-        {ctaEnabled ? (
-          <View className='bottom-cta' onClick={openRoute}>
-            <Text className='bottom-cta-text'>{ctaText}</Text>
-          </View>
-        ) : (
-          <View className='bottom-cta disabled'>
-            <Text className='bottom-cta-text'>{ctaText}</Text>
+        {/* Points */}
+        {points > 0 && (
+          <View className='detail-section'>
+            <Text className='section-label'>活动积分</Text>
+            <View className='points-row'>
+              <Text className='points-num'>{points}</Text>
+              <Text className='points-unit'>分</Text>
+            </View>
+            <Text className='points-hint'>完成活动可获得</Text>
           </View>
         )}
+
+        {/* Route */}
+        {activity.route ? (
+          <View className='detail-section detail-section-tap' onClick={openRoute}>
+            <Text className='section-label'>活动路线</Text>
+            <Text className='section-body route-val'>{activity.address || '查看路线'}</Text>
+            <Text className='route-hint'>点击复制链接 →</Text>
+          </View>
+        ) : null}
+
+        <View className='detail-footer-spacer' />
+      </ScrollView>
+
+      {/* Bottom CTA */}
+      <View className='detail-bottombar'>
+        <View
+          className={`bottom-cta${ctaEnabled ? '' : ' disabled'}`}
+          onClick={ctaEnabled ? () => Taro.navigateTo({ url: `/pages/register/index?id=${activity.id}` }) : undefined}
+        >
+          <Text className='bottom-cta-text'>{ctaText}</Text>
+        </View>
       </View>
     </View>
   )

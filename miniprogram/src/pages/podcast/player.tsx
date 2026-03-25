@@ -61,7 +61,7 @@ export default function PodcastPlayer() {
       if (ctx.duration && !isNaN(ctx.duration)) setTotal(Math.floor(ctx.duration))
     })
     ctx.onEnded(() => setPlaying(false))
-    ctx.onError((e) => {
+    ctx.onError((_e) => {
       Taro.showToast({ title: '音频加载失败', icon: 'none' })
       setPlaying(false)
     })

@@ -67,8 +67,10 @@ export function request<T = any>(options: RequestOptions): Promise<T> {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(res.data as T);
         } else if (res.statusCode === 401) {
-          clearToken();
-          Taro.showToast({ title: '未授权，请检查 Token 配置', icon: 'none' });
+          if (auth && process.env.NODE_ENV === 'production') {
+            clearToken();
+            Taro.showToast({ title: '登录已过期，请重新登录', icon: 'none' });
+          }
           reject(new Error('Unauthorized'));
         } else {
           const msg = (res.data as any)?.message || '请求失败';

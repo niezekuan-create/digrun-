@@ -91,7 +91,7 @@ export default function LeaderboardPage() {
         </>
       )}
 
-      <BottomNav current='leaderboard' />
+      <BottomNav current='my' />
     </View>
   )
 }
