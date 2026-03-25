@@ -19,23 +19,20 @@
   align-items: center;
   justify-content: center;
   gap: 6rpx;
-  opacity: 0.4;
-  transition: opacity 0.2s;
-
-  &.active {
-    opacity: 1;
-  }
 }
 
-.nav-icon-text {
-  font-size: 36rpx;
-  color: #fff;
-  line-height: 1;
+.nav-icon {
+  width: 44rpx;
+  height: 44rpx;
 }
 
 .nav-label {
   font-size: 20rpx;
-  color: #fff;
+  color: #666;
   letter-spacing: 1px;
   font-weight: 600;
+
+  .active & {
+    color: #fff;
+  }
 }

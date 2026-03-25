@@ -24,12 +24,30 @@ page {
   line-height: 1;
 }
 
-.events-sub {
-  display: block;
-  font-size: 22rpx;
-  color: rgba(255, 255, 255, 0.3);
-  letter-spacing: 4px;
-  margin-top: 10rpx;
+.events-tabs {
+  display: flex;
+  gap: 32rpx;
+  margin-top: 20rpx;
+}
+
+.events-tab {
+  padding-bottom: 8rpx;
+  border-bottom: 2rpx solid transparent;
+
+  &.active {
+    border-bottom-color: #fff;
+  }
+}
+
+.events-tab-text {
+  font-size: 26rpx;
+  color: #444;
+  letter-spacing: 2px;
+  font-weight: 700;
+
+  .active & {
+    color: #fff;
+  }
 }
 
 // ── 加载 ──────────────────────────────────────────────────
@@ -79,6 +97,31 @@ page {
   &.placeholder {
     background: linear-gradient(160deg, #1c1c1c 0%, #2a2a2a 100%);
   }
+}
+
+// 已结束蒙层
+.poster-ended-mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.poster-ended-text {
+  font-size: 28rpx;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 4px;
+  border: 2rpx solid rgba(255, 255, 255, 0.2);
+  padding: 12rpx 32rpx;
+  border-radius: 6rpx;
+}
+
+// 已结束 card 整体降调
+.event-item-ended {
+  opacity: 0.7;
 }
 
 // ── 2. 活动信息区 ─────────────────────────────────────────

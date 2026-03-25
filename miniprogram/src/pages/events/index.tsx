@@ -1,11 +1,13 @@
 import { View, Text, Image, ScrollView } from '@tarojs/components'
 import { useLoad } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import BottomNav from '../../components/BottomNav/index'
 import { request } from '../../utils/request'
 import { getMockActivitiesList } from '../../utils/mockData'
 import './index.scss'
+
+type TabKey = 'upcoming' | 'ended'
 
 interface Activity {
   id: string
@@ -39,24 +41,42 @@ const parseDistance = (address?: string) => {
 }
 
 export default function EventsPage() {
-  const [activities, setActivities] = useState<Activity[]>([])
-  const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState<TabKey>('upcoming')
+  const [upcoming, setUpcoming] = useState<Activity[]>([])
+  const [ended, setEnded] = useState<Activity[]>([])
+  const [loadingUpcoming, setLoadingUpcoming] = useState(true)
+  const [loadingEnded, setLoadingEnded] = useState(false)
+  const loadedEnded = useRef(false)
   const clubId = 'xbc3mQnYPR'
 
-  useLoad(() => { loadActivities() })
+  useLoad(() => { loadTab('upcoming') })
 
-  const loadActivities = async () => {
+  const loadTab = async (t: TabKey) => {
+    if (t === 'ended' && loadedEnded.current) return
+    if (t === 'ended') setLoadingEnded(true)
+
     try {
       const res = await request<{ data: Activity[] }>({
-        url: `/activities/list?page=0&pageSize=10&club=${clubId}`,
+        url: `/activities/list?page=0&pageSize=20&club=${clubId}&status=${t}`,
         auth: false,
       })
-      setActivities(res?.data || [])
+      const data = res?.data || []
+      if (t === 'upcoming') setUpcoming(data)
+      else setEnded(data)
     } catch {
-      setActivities(getMockActivitiesList(clubId).data as Activity[])
+      const data = getMockActivitiesList(clubId, t).data as Activity[]
+      if (t === 'upcoming') setUpcoming(data)
+      else setEnded(data)
     } finally {
-      setLoading(false)
+      if (t === 'upcoming') setLoadingUpcoming(false)
+      else { setLoadingEnded(false); loadedEnded.current = true }
     }
+  }
+
+  const switchTab = (t: TabKey) => {
+    if (t === tab) return
+    setTab(t)
+    loadTab(t)
   }
 
   const normalizeUrl = (url?: string) => {
@@ -68,8 +88,8 @@ export default function EventsPage() {
     Taro.navigateTo({ url: `/pages/events/detail?activityId=${id}` })
   }
 
-  const renderCard = (activity: Activity) => {
-    const poster = normalizeUrl(activity.posterUrl) || activity.posterUrl
+  const renderCard = (activity: Activity, isEnded: boolean) => {
+    const poster = normalizeUrl(activity.posterUrl)
     const { mmdd, weekday } = formatStart(activity.start)
     const distance = parseDistance(activity.address)
     const capacity = activity.count
@@ -77,21 +97,20 @@ export default function EventsPage() {
       : ''
 
     return (
-      <View key={activity.id} className='event-item' onClick={() => goDetail(activity.id)}>
+      <View key={activity.id} className={`event-item${isEnded ? ' event-item-ended' : ''}`} onClick={() => goDetail(activity.id)}>
 
-        {/* ── 1. 干净海报 ── */}
+        {/* 海报 */}
         <View className='event-poster-wrap'>
           {poster ? (
             <Image src={poster} className='event-poster' mode='aspectFill' />
           ) : (
             <View className='event-poster placeholder' />
           )}
+          {isEnded && <View className='poster-ended-mask'><Text className='poster-ended-text'>已结束</Text></View>}
         </View>
 
-        {/* ── 2. 活动信息 ── */}
+        {/* 信息 */}
         <View className='event-info'>
-
-          {/* 标题行 */}
           <View className='info-title-row'>
             <View className='info-title-block'>
               <Text className='info-name'>{activity.name}</Text>
@@ -101,9 +120,7 @@ export default function EventsPage() {
             </View>
           </View>
 
-          {/* 元信息行 */}
           <View className='info-meta-row'>
-            {/* 日期 */}
             <View className='meta-item'>
               <Text className='meta-label'>DATE</Text>
               <Text className='meta-value'>{mmdd}</Text>
@@ -112,7 +129,6 @@ export default function EventsPage() {
 
             <View className='meta-divider' />
 
-            {/* 地点 */}
             <View className='meta-item flex-2'>
               <Text className='meta-label'>LOCATION</Text>
               <Text className='meta-value' numberOfLines={1}>{activity.city || '—'}</Text>
@@ -122,8 +138,6 @@ export default function EventsPage() {
             </View>
 
             {!!distance && <View className='meta-divider' />}
-
-            {/* 距离 */}
             {!!distance && (
               <View className='meta-item'>
                 <Text className='meta-label'>DIST</Text>
@@ -132,7 +146,6 @@ export default function EventsPage() {
             )}
           </View>
 
-          {/* 底部：人数 + 报名按钮 */}
           <View className='info-footer'>
             {!!capacity && (
               <View className='footer-capacity'>
@@ -140,37 +153,53 @@ export default function EventsPage() {
                 <Text className='capacity-label'>已报名</Text>
               </View>
             )}
-            <View
-              className={`footer-btn ${!activity.appliable ? 'disabled' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation()
-                if (activity.appliable) goDetail(activity.id)
-              }}
-            >
-              <Text className='footer-btn-text'>
-                {activity.appliable ? '立即报名' : (activity.applyText || '已截止')}
-              </Text>
-            </View>
+            {!isEnded && (
+              <View
+                className={`footer-btn${!activity.appliable ? ' disabled' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (activity.appliable) goDetail(activity.id)
+                }}
+              >
+                <Text className='footer-btn-text'>
+                  {activity.appliable ? '立即报名' : (activity.applyText || '已截止')}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
       </View>
     )
   }
 
+  const activities = tab === 'upcoming' ? upcoming : ended
+  const loading = tab === 'upcoming' ? loadingUpcoming : loadingEnded
+
   return (
     <View className='events-page'>
       <View className='events-header'>
         <Text className='events-title'>EVENTS</Text>
-        <Text className='events-sub'>即将活动</Text>
+        <View className='events-tabs'>
+          <View className={`events-tab${tab === 'upcoming' ? ' active' : ''}`} onClick={() => switchTab('upcoming')}>
+            <Text className='events-tab-text'>即将开始</Text>
+          </View>
+          <View className={`events-tab${tab === 'ended' ? ' active' : ''}`} onClick={() => switchTab('ended')}>
+            <Text className='events-tab-text'>已结束</Text>
+          </View>
+        </View>
       </View>
 
       {loading ? (
         <View className='loading'>
           <Text className='loading-text'>LOADING...</Text>
         </View>
+      ) : activities.length === 0 ? (
+        <View className='loading'>
+          <Text className='loading-text'>暂无活动</Text>
+        </View>
       ) : (
         <ScrollView scrollY className='events-scroll'>
-          {activities.map(renderCard)}
+          {activities.map(a => renderCard(a, tab === 'ended'))}
           <View className='scroll-spacer' />
         </ScrollView>
       )}

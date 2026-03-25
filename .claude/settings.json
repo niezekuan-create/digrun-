@@ -86,7 +86,21 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(grep -r \"192.168\\\\|digrunningclub\" /Users/niezekuan/Documents/CPTCODE/digrun小程序/miniprogram/dist/ --include=*.js -l)"
+      "Bash(grep -r \"192.168\\\\|digrunningclub\" /Users/niezekuan/Documents/CPTCODE/digrun小程序/miniprogram/dist/ --include=*.js -l)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" --max-time 10 https://running.dingstock.net/api/events/upload-cover)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" --max-time 10 https://running.dingstock.net/api/events)",
+      "Bash(curl -s --max-time 10 https://running.dingstock.net/api/)",
+      "Bash(curl -s --max-time 10 https://running.dingstock.net/api/events)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" --max-time 10 -X POST https://running.dingstock.net/events/upload-cover)",
+      "Read(//tmp/**)",
+      "Bash(jobs -l)",
+      "Bash(open -a \"微信开发者工具\")",
+      "Bash(open -a \"WeChat DevTools\")",
+      "Bash(/Applications/wechatwebdevtools.app/Contents/MacOS/cli open:*)",
+      "Bash(git checkout:*)"
+    ],
+    "additionalDirectories": [
+      "/Users/niezekuan/Downloads/小程序icon"
     ]
   }
 }

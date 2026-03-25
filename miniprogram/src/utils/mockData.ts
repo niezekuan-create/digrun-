@@ -61,39 +61,61 @@ export interface MockActivityDetail {
   requireXhs?: boolean
 }
 
+const ALL_MOCK_ACTIVITIES: MockActivity[] = [
+  {
+    id: 'lsd001',
+    name: 'DRC LSD RUN Vol.1',
+    subtitle: 'Long Slow Distance',
+    posterUrl: LSD1,
+    appliable: true,
+    applyText: '立即报名',
+    timeStr: '03/28 08:00',
+    address: '东湖公园南门 · 锦江沿线 30KM',
+    city: '成都',
+    start: now() + 3 * DAY,
+    joinCount: 12,
+    count: 30,
+  },
+  {
+    id: 'lsd002',
+    name: 'DRC LSD RUN Vol.2',
+    subtitle: 'Long Slow Distance',
+    posterUrl: LSD2,
+    appliable: true,
+    applyText: '立即报名',
+    timeStr: '04/05 08:00',
+    address: '滨江公园 · 黄浦江沿线 10KM',
+    city: '上海',
+    start: now() + 11 * DAY,
+    joinCount: 5,
+    count: 30,
+  },
+  {
+    id: 'lsd000',
+    name: 'DRC LSD RUN Vol.0',
+    subtitle: 'Long Slow Distance',
+    posterUrl: LSD1,
+    appliable: false,
+    applyText: '已结束',
+    timeStr: '03/15 08:00',
+    address: '东湖公园南门 · 锦江沿线 30KM',
+    city: '成都',
+    start: now() - 10 * DAY,
+    joinCount: 28,
+    count: 30,
+  },
+]
+
 // ── 列表 ──────────────────────────────────────────────────
-export const getMockActivitiesList = (_clubId?: string): { data: MockActivity[] } => ({
-  data: [
-    {
-      id: 'lsd001',
-      name: 'DRC LSD RUN Vol.1',
-      subtitle: 'Long Slow Distance',
-      posterUrl: LSD1,
-      appliable: true,
-      applyText: '立即报名',
-      timeStr: '03/28 08:00',
-      address: '东湖公园南门 · 锦江沿线 30KM',
-      city: '成都',
-      start: now() + 3 * DAY,
-      joinCount: 12,
-      count: 30,
-    },
-    {
-      id: 'lsd002',
-      name: 'DRC LSD RUN Vol.2',
-      subtitle: 'Long Slow Distance',
-      posterUrl: LSD2,
-      appliable: true,
-      applyText: '立即报名',
-      timeStr: '04/05 08:00',
-      address: '滨江公园 · 黄浦江沿线 10KM',
-      city: '上海',
-      start: now() + 11 * DAY,
-      joinCount: 5,
-      count: 30,
-    },
-  ],
-})
+export const getMockActivitiesList = (_clubId?: string, status?: 'upcoming' | 'ended'): { data: MockActivity[] } => {
+  const n = now()
+  const filtered = status === 'ended'
+    ? ALL_MOCK_ACTIVITIES.filter(a => a.start !== undefined && a.start < n)
+    : status === 'upcoming'
+    ? ALL_MOCK_ACTIVITIES.filter(a => a.start === undefined || a.start >= n)
+    : ALL_MOCK_ACTIVITIES
+  return { data: filtered }
+}
 
 // ── 详情 ──────────────────────────────────────────────────
 const DETAIL_MAP: Record<string, MockActivityDetail> = {
