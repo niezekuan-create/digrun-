@@ -109,21 +109,22 @@ export default function MyPage() {
     }
 
     // 我的报名记录
-    request<Registration[]>({ url: '/registrations/my' })
-      .then(setRegs)
+    request<any>({ url: '/registrations/my' })
+      .then(res => setRegs(Array.isArray(res) ? res : (res?.data ?? [])))
       .catch(() => {})
 
     // 兑换记录
-    request<PointsOrder[]>({ url: '/points/orders' })
-      .then(setOrders)
+    request<any>({ url: '/points/orders' })
+      .then(res => setOrders(Array.isArray(res) ? res : (res?.data ?? [])))
       .catch(() => {})
 
     // 积分排行榜
-    request<LeaderboardEntry[]>({ url: '/leaderboard/points', auth: false })
-      .then(data => {
-        setLeaderboard(data.slice(0, 20))
+    request<any>({ url: '/leaderboard/points', auth: false })
+      .then(res => {
+        const list: LeaderboardEntry[] = Array.isArray(res) ? res : (res?.data ?? [])
+        setLeaderboard(list.slice(0, 20))
         const currentUserId = getUserInfo()?.id
-        const me = currentUserId ? data.find(e => e.userId === currentUserId) : undefined
+        const me = currentUserId ? list.find(e => e.userId === currentUserId) : undefined
         setMyRank(me || null)
       })
       .catch(() => {})

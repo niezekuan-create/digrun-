@@ -44,7 +44,8 @@ export default function PodcastPlayer() {
 
   const loadAndInit = async (podcastId: number) => {
     try {
-      const data = await request<Podcast>({ url: `/podcasts/${podcastId}`, auth: false })
+      const res = await request<{ data: Podcast } | Podcast>({ url: `/podcasts/${podcastId}`, auth: false })
+      const data: Podcast = (res as any)?.data ?? res
       setPodcast(data)
       if (data.duration) setTotal(data.duration)
       initAudio(data.audio_url)

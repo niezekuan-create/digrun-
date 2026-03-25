@@ -39,10 +39,11 @@ export default function PodcastPage() {
 
   const loadPodcasts = async () => {
     try {
-      const data = await request<Podcast[]>({ url: '/podcasts', auth: false })
-      setPodcasts(data)
-    } catch (e) {
-      // handled
+      const res = await request<{ data: Podcast[] } | Podcast[]>({ url: '/podcasts', auth: false })
+      const list = Array.isArray(res) ? res : ((res as any)?.data ?? [])
+      setPodcasts(list)
+    } catch {
+      // 无 mock 数据，静默失败，展示空列表
     } finally {
       setLoading(false)
     }
