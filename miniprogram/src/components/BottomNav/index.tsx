@@ -1,6 +1,5 @@
 import { View, Text, Image } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { userManager } from '../../utils/request'
 import './index.scss'
 
 const iconEvents = require('../../assets/icons/活动-白.png')
@@ -25,14 +24,6 @@ const tabs = [
 
 export default function BottomNav({ current }: Props) {
   const navigate = (path: string, key: string) => {
-    if (key === 'my') {
-      if (userManager.hasToken()) {
-        Taro.redirectTo({ url: path })
-      } else {
-        Taro.redirectTo({ url: '/pages/login/index' })
-      }
-      return
-    }
     if (key === current) return
     Taro.redirectTo({ url: path })
   }

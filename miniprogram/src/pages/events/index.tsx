@@ -3,7 +3,7 @@ import { useLoad } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import { useState, useRef } from 'react'
 import BottomNav from '../../components/BottomNav/index'
-import { request } from '../../utils/request'
+import { request, CLUB_ID_CONFIG } from '../../utils/request'
 import { getMockActivitiesList } from '../../utils/mockData'
 import './index.scss'
 
@@ -47,7 +47,7 @@ export default function EventsPage() {
   const [loadingUpcoming, setLoadingUpcoming] = useState(true)
   const [loadingEnded, setLoadingEnded] = useState(false)
   const loadedEnded = useRef(false)
-  const clubId = 'xbc3mQnYPR'
+  const clubId = CLUB_ID_CONFIG
 
   useLoad(() => { loadTab('upcoming') })
 
@@ -57,8 +57,10 @@ export default function EventsPage() {
 
     try {
       const res = await request<{ data: Activity[] }>({
-        url: `/activities/list?page=0&pageSize=20&club=${clubId}&status=${t}`,
-        auth: false,
+        url:
+          t === 'ended'
+            ? `/api/mini/activities/list?page=0&pageSize=20&statuses=offline&club=${clubId}`
+            : `/api/mini/activities/list?page=0&pageSize=20&statuses=inprogress&statuses=upcoming&club=${clubId}`,
       })
       const data = res?.data || []
       if (t === 'upcoming') setUpcoming(data)

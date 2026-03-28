@@ -1,9 +1,10 @@
-import { View, Text, ScrollView, Image } from '@tarojs/components'
+import { View, Text, ScrollView, Image, Input } from '@tarojs/components'
 import { useLoad, useRouter } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import { useState } from 'react'
 import { request } from '../../utils/request'
 import { getMockActivityDetail } from '../../utils/mockData'
+import { isLoggedIn, getUserInfo } from '../../utils/auth'
 import './detail.scss'
 
 interface ActivityDetail {
@@ -38,6 +39,11 @@ interface ActivityDetail {
   timeStr?: string
   btnText?: string
   btnStatus?: boolean
+  isSignedUp?: boolean
+  isChecked?: boolean
+  registrationId?: number
+  requireSize?: boolean
+  requireXhs?: boolean
 }
 
 export default function EventDetailPage() {
@@ -45,6 +51,15 @@ export default function EventDetailPage() {
   const [activity, setActivity] = useState<ActivityDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [topPadding, setTopPadding] = useState(0)
+  const [signupVisible, setSignupVisible] = useState(false)
+  const [signupSubmitting, setSignupSubmitting] = useState(false)
+  const [signupForm, setSignupForm] = useState({
+    name: '',
+    mobile: '',
+    clothingSize: '',
+    shoeSize: '',
+    xhsLink: '',
+  })
 
   const activityId = router.params.activityId || router.params.id
 
@@ -63,7 +78,7 @@ export default function EventDetailPage() {
 
   const loadData = async (id: string) => {
     try {
-      const res = await request<{ data: ActivityDetail }>({ url: `/activities/detail/${id}`, auth: false })
+      const res = await request<{ data: ActivityDetail; err: boolean }>({ url: `/api/mini/activities/detail/${id}` })
       setActivity(res?.data || null)
     } catch (e) {
       const mock = getMockActivityDetail(id)
@@ -76,6 +91,73 @@ export default function EventDetailPage() {
   const normalizeUrl = (url?: string) => {
     if (!url) return ''
     return url.trim().replace(/^`+|`+$/g, '')
+  }
+
+  const openSignupModal = () => {
+    const user = getUserInfo()
+    setSignupForm((prev) => ({
+      ...prev,
+      mobile: prev.mobile || user?.phone || '',
+    }))
+    setSignupVisible(true)
+  }
+
+  const closeSignupModal = () => {
+    if (signupSubmitting) return
+    setSignupVisible(false)
+  }
+
+  const updateSignupField = (key: keyof typeof signupForm, val: string) => {
+    setSignupForm((prev) => ({ ...prev, [key]: val }))
+  }
+
+  const submitSignup = async () => {
+    if (!activity?.id) return
+    if (!isLoggedIn()) {
+      Taro.showToast({ title: '请先登录', icon: 'none' })
+      setTimeout(() => Taro.redirectTo({ url: '/pages/login/index' }), 600)
+      return
+    }
+
+    const name = signupForm.name.trim()
+    const mobile = signupForm.mobile.trim()
+    const clothingSize = signupForm.clothingSize.trim()
+    const shoeSize = signupForm.shoeSize.trim()
+    const rawXhsLink = signupForm.xhsLink.trim()
+    const xhsLink = rawXhsLink ? normalizeUrl(rawXhsLink) : ''
+    const requireSize = !!activity.requireSize
+    const requireXhs = !!activity.requireXhs
+
+    if (!name) return Taro.showToast({ title: '请填写姓名', icon: 'none' })
+    if (!/^1\d{10}$/.test(mobile)) return Taro.showToast({ title: '请填写正确手机号', icon: 'none' })
+    if (requireSize && !clothingSize) return Taro.showToast({ title: '请填写衣服尺码', icon: 'none' })
+    if (requireSize && !shoeSize) return Taro.showToast({ title: '请填写鞋码', icon: 'none' })
+    if (requireXhs && !xhsLink) return Taro.showToast({ title: '请填写小红书链接', icon: 'none' })
+
+    setSignupSubmitting(true)
+    try {
+      const payload: any = { name, mobile }
+      if (clothingSize) payload.clothingSize = clothingSize
+      if (shoeSize) payload.shoeSize = shoeSize
+      if (xhsLink) payload.xhsLink = xhsLink
+
+      const res: any = await request<any>({
+        url: `/api/mini/activities/join/${activity.id}`,
+        method: 'POST',
+        data: payload,
+      })
+      if (res?.err) {
+        Taro.showToast({ title: res?.msg || res?.message || '报名失败', icon: 'none' })
+        return
+      }
+      Taro.showToast({ title: '报名成功', icon: 'success' })
+      setSignupVisible(false)
+      setActivity((prev) => (prev ? { ...prev, isSignedUp: true } : prev))
+      loadData(activity.id)
+    } catch (e) {
+    } finally {
+      setSignupSubmitting(false)
+    }
   }
 
   const openRoute = async () => {
@@ -114,14 +196,34 @@ export default function EventDetailPage() {
     )
   }
 
-  const startDate = activity.start ? new Date(activity.start) : null
-  const endDate = activity.end ? new Date(activity.end) : null
-  const applyStartDate = activity.applyStart ? new Date(activity.applyStart) : null
-  const applyEndDate = activity.applyEnd ? new Date(activity.applyEnd) : null
+  const toMs = (v: any): number | undefined => {
+    const n = typeof v === 'string' ? Number(v) : v
+    if (typeof n !== 'number' || !Number.isFinite(n) || n <= 0) return undefined
+    return n < 1e12 ? n * 1000 : n
+  }
 
-  const timeRange = startDate
-    ? `${formatDate(startDate)} ${formatTime(startDate)}${endDate ? ` — ${formatTime(endDate)}` : ''}`
-    : activity.timeStr || ''
+  const toDate = (v: any): Date | null => {
+    const ms = toMs(v)
+    if (!ms) return null
+    const d = new Date(ms)
+    return Number.isNaN(d.getTime()) ? null : d
+  }
+
+  const startDate = toDate(activity.start)
+  const endDate = toDate(activity.end)
+  const applyStartDate = toDate(activity.applyStart)
+  const applyEndDate = toDate(activity.applyEnd)
+
+  const timeRange = (() => {
+    if (!startDate) return activity.timeStr || ''
+    if (!endDate) return `${formatDateShort(startDate)} ${formatTime(startDate)}`
+    const sameDay =
+      startDate.getFullYear() === endDate.getFullYear() &&
+      startDate.getMonth() === endDate.getMonth() &&
+      startDate.getDate() === endDate.getDate()
+    if (sameDay) return `${formatTime(startDate)} — ${formatTime(endDate)}`
+    return `${formatDateShort(startDate)} ${formatTime(startDate)} — ${formatDateShort(endDate)} ${formatTime(endDate)}`
+  })()
 
   const applyRange =
     applyStartDate && applyEndDate
@@ -131,8 +233,40 @@ export default function EventDetailPage() {
   const joinCount = activity.joinCount ?? 0
   const capacity = activity.count ?? 0
   const points = activity.points ?? 0
-  const ctaText = activity.btnText || (activity.appliable ? '立即报名' : activity.applyText || '已截止')
-  const ctaEnabled = !!activity.btnStatus
+
+  const getCtaState = () => {
+    const now = Date.now()
+    const applyStart = toMs(activity.applyStart)
+    const applyEnd = toMs(activity.applyEnd)
+    const start = toMs(activity.start)
+    const end = toMs(activity.end)
+    const isSignedUp = !!activity.isSignedUp
+    const isChecked = !!activity.isChecked
+
+    if (end !== undefined && now > end) return { text: '已结束', enabled: false, action: 'none' as const }
+
+    if (start !== undefined && end !== undefined && now >= start && now <= end) {
+      if (isChecked) return { text: '已签到', enabled: false, action: 'none' as const }
+      if (isSignedUp) return { text: '签到', enabled: true, action: 'checkin' as const }
+      return { text: '未报名', enabled: false, action: 'none' as const }
+    }
+
+    if (applyStart !== undefined && now < applyStart) return { text: '未开始', enabled: false, action: 'none' as const }
+
+    const inApplyWindow =
+      applyStart !== undefined && applyEnd !== undefined ? now >= applyStart && now <= applyEnd : undefined
+
+    if (inApplyWindow !== false) {
+      if (isSignedUp) return { text: '已报名', enabled: false, action: 'none' as const }
+      if (activity.appliable) return { text: '报名', enabled: true, action: 'signup' as const }
+      return { text: activity.applyText || '已截止', enabled: false, action: 'none' as const }
+    }
+
+    if (isSignedUp) return { text: '已报名', enabled: false, action: 'none' as const }
+    return { text: activity.applyText || '已截止', enabled: false, action: 'none' as const }
+  }
+
+  const ctaState = getCtaState()
   const clubAvatar = normalizeUrl(activity.club?.avatar)
   const clubName = activity.club?.name || 'DIG RUNNING CLUB'
   const avatars = (activity.joinAvatars || []).map(normalizeUrl).filter(Boolean).slice(0, 8)
@@ -171,9 +305,7 @@ export default function EventDetailPage() {
                   <Text className='time-block-date'>{formatDateShort(startDate)}</Text>
                   <Text className='time-block-year'>{startDate.getFullYear()}</Text>
                 </View>
-                <Text className='time-block-range'>
-                  {formatTime(startDate)}{endDate ? ` — ${formatTime(endDate)}` : ''}
-                </Text>
+                <Text className='time-block-range'>{timeRange || '—'}</Text>
               </>
             ) : (
               <Text className='time-block-range'>{activity.timeStr || '—'}</Text>
@@ -251,12 +383,101 @@ export default function EventDetailPage() {
       {/* Bottom CTA */}
       <View className='detail-bottombar'>
         <View
-          className={`bottom-cta${ctaEnabled ? '' : ' disabled'}`}
-          onClick={ctaEnabled ? () => Taro.navigateTo({ url: `/pages/register/index?id=${activity.id}` }) : undefined}
+          className={`bottom-cta${ctaState.enabled ? '' : ' disabled'}`}
+          onClick={
+            ctaState.enabled
+              ? () => {
+                  if (ctaState.action === 'signup') {
+                    openSignupModal()
+                    return
+                  }
+                  if (ctaState.action === 'checkin') {
+                    Taro.navigateTo({ url: `/pages/checkin/index?activityId=${activity.id}` })
+                  }
+                }
+              : undefined
+          }
         >
-          <Text className='bottom-cta-text'>{ctaText}</Text>
+          <Text className='bottom-cta-text'>{ctaState.text}</Text>
         </View>
       </View>
+
+      {signupVisible && (
+        <View className='signup-mask' onClick={closeSignupModal}>
+          <View className='signup-modal' onClick={(e) => e.stopPropagation()}>
+            <Text className='signup-title'>填写报名信息</Text>
+
+            <View className='signup-field'>
+              <Text className='signup-label'>姓名</Text>
+              <Input
+                className='signup-input'
+                value={signupForm.name}
+                placeholder='请输入姓名'
+                placeholderClass='signup-placeholder'
+                onInput={(e) => updateSignupField('name', String(e.detail.value || ''))}
+              />
+            </View>
+
+            <View className='signup-field'>
+              <Text className='signup-label'>手机</Text>
+              <Input
+                className='signup-input'
+                value={signupForm.mobile}
+                placeholder='请输入手机号'
+                placeholderClass='signup-placeholder'
+                type='number'
+                maxlength={11}
+                onInput={(e) => updateSignupField('mobile', String(e.detail.value || ''))}
+              />
+            </View>
+
+            <View className='signup-field'>
+              <Text className='signup-label'>衣服尺码{activity.requireSize ? '（必填）' : '（选填）'}</Text>
+              <Input
+                className='signup-input'
+                value={signupForm.clothingSize}
+                placeholder='例如：S/M/L/XL'
+                placeholderClass='signup-placeholder'
+                onInput={(e) => updateSignupField('clothingSize', String(e.detail.value || ''))}
+              />
+            </View>
+
+            <View className='signup-field'>
+              <Text className='signup-label'>鞋码{activity.requireSize ? '（必填）' : '（选填）'}</Text>
+              <Input
+                className='signup-input'
+                value={signupForm.shoeSize}
+                placeholder='例如：39/40/41'
+                placeholderClass='signup-placeholder'
+                onInput={(e) => updateSignupField('shoeSize', String(e.detail.value || ''))}
+              />
+            </View>
+
+            <View className='signup-field'>
+              <Text className='signup-label'>小红书链接{activity.requireXhs ? '（必填）' : '（选填）'}</Text>
+              <Input
+                className='signup-input'
+                value={signupForm.xhsLink}
+                placeholder='https://xhslink.com/m/xxxx'
+                placeholderClass='signup-placeholder'
+                onInput={(e) => updateSignupField('xhsLink', String(e.detail.value || ''))}
+              />
+            </View>
+
+            <View className='signup-actions'>
+              <View className='signup-btn ghost' onClick={closeSignupModal}>
+                <Text className='signup-btn-text'>取消</Text>
+              </View>
+              <View
+                className={`signup-btn primary${signupSubmitting ? ' disabled' : ''}`}
+                onClick={signupSubmitting ? undefined : submitSignup}
+              >
+                <Text className='signup-btn-text'>{signupSubmitting ? '提交中' : '报名'}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   )
 }

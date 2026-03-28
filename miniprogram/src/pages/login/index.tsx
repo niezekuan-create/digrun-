@@ -3,7 +3,7 @@ import { useLoad } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import { useState } from 'react'
 import { isLoggedIn, login, setUserInfo } from '../../utils/auth'
-import { userManager } from '../../utils/request'
+import { CLUB_ID_CONFIG, request } from '../../utils/request'
 import './index.scss'
 
 export default function LoginPage() {
@@ -15,29 +15,40 @@ export default function LoginPage() {
     }
   })
 
-  const handleGetPhoneNumber = async (e: any) => {
+  const doLogin = async (wxLoginCode: string) => {
     if (loading) return
-    if (e?.detail?.errMsg !== 'getPhoneNumber:ok') {
-      Taro.showToast({ title: '未授权手机号', icon: 'none' })
-      return
-    }
-    const phoneCode = e?.detail?.code
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('wx phone code:', phoneCode)
-    }
-    if (!phoneCode) {
-      Taro.showToast({ title: '获取 code 失败', icon: 'none' })
-      return
-    }
     setLoading(true)
     try {
-      await login(phoneCode)
+      await login(wxLoginCode)
+      const info: any = await request<any>({ url: `/api/mini/user/info?clubId=${CLUB_ID_CONFIG}` })
+      if (info?.err) throw new Error(info?.msg || info?.message || 'user_info_failed')
+      const profile = info?.data
+      const u = profile?.user || {}
+      if (u?.id) {
+        setUserInfo({
+          id: u?.id ?? '',
+          nickname: u?.username || '',
+          username: u?.username || '',
+          avatar: u?.avatar || '',
+          is_admin: !!profile?.isAdmin,
+        } as any)
+      }
       Taro.reLaunch({ url: '/pages/events/index' })
-    } catch (err) {
-      Taro.showToast({ title: '登录失败，请重试', icon: 'none' })
+    } catch (err: any) {
+      const msg = String(err?.message || '')
+      Taro.showToast({ title: msg || '登录失败，请重试', icon: 'none' })
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleGetPhoneNumber = async (e: any) => {
+    const code = e?.detail?.code
+    if (!code) {
+      Taro.showToast({ title: '未授权手机号', icon: 'none' })
+      return
+    }
+    await doLogin(code)
   }
 
   return (
@@ -76,26 +87,6 @@ export default function LoginPage() {
             </Text>
           </Button>
           <Text className='splash-hint'>登录即代表同意服务协议</Text>
-          {process.env.NODE_ENV !== 'production' && (
-            <Text
-              style='margin-top:32rpx;font-size:22rpx;color:rgba(255,255,255,0.35);text-decoration:underline;'
-              onClick={() => {
-                userManager.setToken('dev_mock_token')
-                setUserInfo({
-                  id: 1,
-                  nickname: 'Dev User',
-                  avatar: '',
-                  phone: '13800000000',
-                  wechat_openid: 'dev_openid',
-                  is_admin: true,
-                  created_at: new Date().toISOString(),
-                })
-                Taro.reLaunch({ url: '/pages/events/index' })
-              }}
-            >
-              [DEV] 跳过登录
-            </Text>
-          )}
         </View>
       </View>
     </View>

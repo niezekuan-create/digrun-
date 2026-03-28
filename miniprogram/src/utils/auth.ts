@@ -2,14 +2,15 @@ import Taro from '@tarojs/taro';
 import { request, userManager } from './request';
 
 export interface UserInfo {
-  id: number;
-  nickname: string;
+  id: string | number;
+  nickname?: string;
+  username?: string;
   avatar?: string;
   phone?: string;
   city?: string;
-  wechat_openid: string;
-  is_admin: boolean;
-  created_at: string;
+  wechat_openid?: string;
+  is_admin?: boolean;
+  created_at?: string;
 }
 
 export function getUserInfo(): UserInfo | null {
@@ -26,34 +27,26 @@ export function isLoggedIn(): boolean {
 }
 
 export async function login(wxLoginCode: string): Promise<void> {
-  if (!wxLoginCode) throw new Error('no_wechat_phone_code');
+  if (!wxLoginCode) throw new Error('no_wx_login_code');
+  const payload = { wxLoginCode };
 
   const res: any = await request<any>({
-    url: '/auth/wechat/login',
+    url: '/api/auth/wechat/login',
     method: 'POST',
-    data: {
-      wxLoginCode,
-      app: 'wechat',
-      sys: '0.0.1',
-      xgToken: '',
-      iosToken: '',
-    },
+    data: payload,
     auth: false,
   });
-
-  if (res?.err) throw new Error('login_failed');
+  if (res?.err) throw new Error(res?.msg || res?.message || 'login_failed');
 
   const token =
     (typeof res?.data === 'string' ? res.data : '') ||
     res?.access_token ||
     res?.token ||
     res?.data?.access_token ||
-    res?.data?.token;
+    res?.data?.token ||
+    res?.data?.data?.token;
   if (!token) throw new Error('no_token');
   userManager.setToken(token);
-
-  const user = res?.user || res?.data?.user;
-  if (user) setUserInfo(user);
 }
 
 export function logout() {
