@@ -4,8 +4,10 @@ export default {
   },
   defineConstants: {
     API_BASE_URL: '"https://running.dingstock.net"',
-    CLUB_ID: '"Pnkym4dvq4"',
+    CLUB_ID: '"xbc3mQnYPR"',
     FORCE_ADMIN: 'false',
+    ENV_NAME: '"prod"',
+    IMG_VERSION: '"2"',
   },
   mini: {},
   h5: {},

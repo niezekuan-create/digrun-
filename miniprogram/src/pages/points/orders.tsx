@@ -2,7 +2,6 @@ import { View, Text, ScrollView } from '@tarojs/components'
 import { useLoad } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import { useState } from 'react'
-import BottomNav from '../../components/BottomNav/index'
 import { request } from '../../utils/request'
 import './orders.scss'
 
@@ -62,7 +61,7 @@ export default function OrdersPage() {
         <View className='empty'>
           <Text className='empty-title'>暂无兑换记录</Text>
           <Text className='empty-sub'>去积分商城兑换专属权益</Text>
-          <View className='go-mall-btn' onClick={() => Taro.navigateTo({ url: '/pages/points/mall' })}>
+          <View className='go-mall-btn' onClick={() => Taro.redirectTo({ url: '/pages/points/mall' })}>
             <Text className='go-mall-text'>去商城 →</Text>
           </View>
         </View>
@@ -87,8 +86,6 @@ export default function OrdersPage() {
           })}
         </ScrollView>
       )}
-
-      <BottomNav current='mall' />
     </View>
   )
 }

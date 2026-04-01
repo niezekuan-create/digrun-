@@ -4,8 +4,8 @@
  */
 
 // 本地测试图片（真实接口上线后改为 CDN URL）
-const LSD1 = require('../assets/images/lsd1.jpg')
-const LSD2 = require('../assets/images/lsd2.png')
+const LSD1 = require('../assets/images/splash.jpg')
+const LSD2 = require('../assets/images/logo.png')
 
 // 时间基准（以当前运行时间计算）
 const now = () => Date.now()

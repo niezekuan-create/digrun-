@@ -1,10 +1,8 @@
 import { View, Text, ScrollView, Image } from '@tarojs/components'
-import { useLoad } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import { useState } from 'react'
-import BottomNav from '../../components/BottomNav/index'
-import { request, BASE_URL } from '../../utils/request'
 import './index.scss'
+import BottomNav from '../../components/BottomNav/index'
 
 interface Podcast {
   id: number
@@ -30,24 +28,8 @@ function formatDate(dateStr: string): string {
 }
 
 export default function PodcastPage() {
-  const [podcasts, setPodcasts] = useState<Podcast[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useLoad(() => {
-    loadPodcasts()
-  })
-
-  const loadPodcasts = async () => {
-    try {
-      const res = await request<{ data: Podcast[] } | Podcast[]>({ url: '/podcasts', auth: false })
-      const list = Array.isArray(res) ? res : ((res as any)?.data ?? [])
-      setPodcasts(list)
-    } catch {
-      // 无 mock 数据，静默失败，展示空列表
-    } finally {
-      setLoading(false)
-    }
-  }
+  const [podcasts] = useState<Podcast[]>([])
+  const [loading] = useState(false)
 
   const goPlayer = (podcast: Podcast) => {
     Taro.navigateTo({ url: `/pages/podcast/player?id=${podcast.id}` })
@@ -75,7 +57,7 @@ export default function PodcastPage() {
             <View key={p.id} className='podcast-card' onClick={() => goPlayer(p)}>
               <View className='podcast-cover-wrap'>
                 {p.cover_url ? (
-                  <Image src={`${BASE_URL}${p.cover_url}`} className='podcast-cover-thumb' mode='aspectFill' />
+                  <Image src={p.cover_url} className='podcast-cover-thumb' mode='aspectFill' lazyLoad />
                 ) : (
                   <View className='podcast-cover-placeholder'>
                     <Text className='podcast-ep-num'>
@@ -108,7 +90,6 @@ export default function PodcastPage() {
           ))}
         </ScrollView>
       )}
-
       <BottomNav current='podcast' />
     </View>
   )

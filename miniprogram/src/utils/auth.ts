@@ -51,5 +51,6 @@ export async function login(wxLoginCode: string): Promise<void> {
 
 export function logout() {
   userManager.clearToken();
+  try { Taro.hideTabBar({ animation: false }); } catch {}
   Taro.reLaunch({ url: '/pages/login/index' });
 }

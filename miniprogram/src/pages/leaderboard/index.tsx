@@ -1,7 +1,6 @@
 import { View, Text, Image, ScrollView } from '@tarojs/components'
 import { useLoad } from '@tarojs/taro'
 import { useState } from 'react'
-import BottomNav from '../../components/BottomNav/index'
 import { request } from '../../utils/request'
 import { getUserInfo } from '../../utils/auth'
 import './index.scss'
@@ -72,7 +71,7 @@ export default function LeaderboardPage() {
                   </View>
                   <View className='leader-avatar'>
                     {entry.avatar ? (
-                      <Image src={entry.avatar} className='avatar-img' />
+                      <Image src={entry.avatar} className='avatar-img' lazyLoad />
                     ) : (
                       <View className='avatar-placeholder'>
                         <Text className='avatar-initial'>{entry.nickname[0]}</Text>
@@ -90,8 +89,6 @@ export default function LeaderboardPage() {
           </ScrollView>
         </>
       )}
-
-      <BottomNav current='my' />
     </View>
   )
 }

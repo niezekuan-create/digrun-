@@ -6,6 +6,7 @@ import { request } from '../../utils/request'
 import { getMockActivityDetail } from '../../utils/mockData'
 import { isLoggedIn, getUserInfo } from '../../utils/auth'
 import './detail.scss'
+declare const IMG_VERSION: string
 
 interface ActivityDetail {
   id: string
@@ -79,7 +80,32 @@ export default function EventDetailPage() {
   const loadData = async (id: string) => {
     try {
       const res = await request<{ data: ActivityDetail; err: boolean }>({ url: `/api/mini/activities/detail/${id}` })
-      setActivity(res?.data || null)
+      const raw: any = (res as any)?.data
+      const normalizeDetail = (v: any): ActivityDetail | null => {
+        if (!v || typeof v !== 'object') return null
+        const joinCountRaw =
+          (v as any).joinCount ??
+          (v as any).join_count ??
+          (v as any).joinedCount ??
+          (v as any).joined_count ??
+          (v as any).registrationCount ??
+          (v as any).registration_count ??
+          (v as any).participantsCount ??
+          (v as any).participants_count
+
+        const joinCount =
+          typeof joinCountRaw === 'number'
+            ? joinCountRaw
+            : typeof joinCountRaw === 'string'
+              ? Number(joinCountRaw)
+              : undefined
+
+        return {
+          ...(v as any),
+          joinCount: Number.isFinite(joinCount as any) ? (joinCount as any) : (v as any).joinCount,
+        }
+      }
+      setActivity(normalizeDetail(raw))
     } catch (e) {
       const mock = getMockActivityDetail(id)
       if (mock) setActivity(mock.data as ActivityDetail)
@@ -90,7 +116,23 @@ export default function EventDetailPage() {
 
   const normalizeUrl = (url?: string) => {
     if (!url) return ''
-    return url.trim().replace(/^`+|`+$/g, '')
+    const u = url.trim().replace(/^`+|`+$/g, '')
+    if (!u) return ''
+    const withParam = (raw: string, key: string, value: string) => {
+      const re = new RegExp(`([?&])${key}=`)
+      if (re.test(raw)) return raw
+      return `${raw}${raw.includes('?') ? '&' : '?'}${key}=${encodeURIComponent(value)}`
+    }
+    const isOss = /(\.oss-|\.aliyuncs\.com)/i.test(u)
+    if (isOss && !/[?&]x-oss-process=/i.test(u)) {
+      const next = `${u}${u.includes('?') ? '&' : '?'}x-oss-process=image%2Fformat%2Cjpg`
+      return withParam(next, 'v', IMG_VERSION || '1')
+    }
+    if (/\.(heic|heif)(\?|#|$)/i.test(u) && !/[?&]x-oss-process=/i.test(u)) {
+      const next = `${u}${u.includes('?') ? '&' : '?'}x-oss-process=image%2Fformat%2Cjpg`
+      return withParam(next, 'v', IMG_VERSION || '1')
+    }
+    return u
   }
 
   const openSignupModal = () => {
@@ -269,7 +311,6 @@ export default function EventDetailPage() {
   const ctaState = getCtaState()
   const clubAvatar = normalizeUrl(activity.club?.avatar)
   const clubName = activity.club?.name || 'DIG RUNNING CLUB'
-  const avatars = (activity.joinAvatars || []).map(normalizeUrl).filter(Boolean).slice(0, 8)
 
   return (
     <View className='detail-page'>
@@ -285,7 +326,7 @@ export default function EventDetailPage() {
         <View className='detail-header'>
           <View className='detail-club-row'>
             {clubAvatar ? (
-              <Image src={clubAvatar} className='detail-club-avatar' mode='aspectFill' />
+              <Image src={clubAvatar} className='detail-club-avatar' mode='aspectFill' lazyLoad />
             ) : (
               <View className='detail-club-avatar-placeholder'>
                 <Text className='detail-club-avatar-char'>D</Text>
@@ -342,18 +383,6 @@ export default function EventDetailPage() {
           <Text className='section-body'>
             {capacity ? `${joinCount} / ${capacity} 人` : `${joinCount} 人`}
           </Text>
-          {avatars.length > 0 && (
-            <View className='avatar-row'>
-              {avatars.map((a, idx) => (
-                <Image key={`${a}_${idx}`} src={a} className='reg-avatar' mode='aspectFill' />
-              ))}
-              {activity.joinCount && activity.joinCount > avatars.length ? (
-                <View className='reg-avatar reg-avatar-more'>
-                  <Text className='reg-avatar-more-text'>…</Text>
-                </View>
-              ) : null}
-            </View>
-          )}
         </View>
 
         {/* Points */}

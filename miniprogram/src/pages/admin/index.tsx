@@ -1009,7 +1009,7 @@ export default function AdminPage() {
                   <View className='cover-picker' onClick={pickCover}>
                     {coverLocalPath ? (
                       <View className='cover-preview-wrap'>
-                        <Image src={coverLocalPath} className='cover-preview-img' mode='aspectFill' />
+                        <Image src={coverLocalPath} className='cover-preview-img' mode='aspectFill' lazyLoad />
                         {uploadingCover && (
                           <View className='cover-uploading-mask'>
                             <Text className='cover-uploading-text'>上传中...</Text>
@@ -1096,7 +1096,7 @@ export default function AdminPage() {
                 <View className='podcast-cover-picker' onClick={pickPodcastCover}>
                   {podcastCoverLocalPath ? (
                     <View className='cover-preview-wrap'>
-                      <Image src={podcastCoverLocalPath} className='cover-preview-img' mode='aspectFill' />
+                      <Image src={podcastCoverLocalPath} className='cover-preview-img' mode='aspectFill' lazyLoad />
                       {uploadingPodcastCover && (
                         <View className='cover-uploading-mask'>
                           <Text className='cover-uploading-text'>上传中...</Text>

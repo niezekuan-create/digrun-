@@ -14,10 +14,13 @@ export default defineAppConfig({
     'pages/points/orders',
   ],
   window: {
-    backgroundTextStyle: 'light',
+    backgroundTextStyle: 'dark',
     navigationBarBackgroundColor: '#000000',
     navigationBarTitleText: 'DIG RUNNING CLUB',
     navigationBarTextStyle: 'white',
     backgroundColor: '#000000',
+    backgroundColorTop: '#000000',
+    backgroundColorBottom: '#000000',
+    enablePullDownRefresh: false,
   },
 })

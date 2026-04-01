@@ -1,11 +1,12 @@
 import { View, Text, Image } from '@tarojs/components'
 import { useDidShow, useLoad, useReachBottom } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
-import { useEffect, useState } from 'react'
-import BottomNav from '../../components/BottomNav/index'
+import { useEffect, useRef, useState } from 'react'
 import { request, BASE_URL, userManager, CLUB_ID_CONFIG } from '../../utils/request'
 import { getUserInfo, logout, setUserInfo } from '../../utils/auth'
 import './index.scss'
+import BottomNav from '../../components/BottomNav/index'
+declare const IMG_VERSION: string
 
 declare const FORCE_ADMIN: boolean
 
@@ -88,6 +89,7 @@ export default function MyPage() {
   const [activeTab, setActiveTab] = useState<'events' | 'orders' | 'leaderboard'>('events')
   const [user, setUser] = useState(() => getUserInfo())
   const clubId = CLUB_ID_CONFIG
+  const lastRefreshRef = useRef(0)
 
   useLoad(() => {
     setMyActivities([])
@@ -108,19 +110,33 @@ export default function MyPage() {
 
   useDidShow(() => {
     setUser(getUserInfo())
-    setMyActivities([])
-    setActPage(0)
-    setActHasMore(true)
-    loadActivities(0)
+    const now = Date.now()
+    if (lastRefreshRef.current && now - lastRefreshRef.current < 30000) return
+    lastRefreshRef.current = now
     loadAll()
+    if (myActivities.length === 0) loadActivities(0)
   })
 
   const cleanText = (v: any) => String(v || '').trim().replace(/^`|`$/g, '').trim()
   const normalizeUrl = (v: any) => {
     const u = cleanText(v)
     if (!u) return ''
-    if (/^https?:\/\//i.test(u)) return u
-    return `${BASE_URL}${u}`
+    const withParam = (raw: string, key: string, value: string) => {
+      const re = new RegExp(`([?&])${key}=`)
+      if (re.test(raw)) return raw
+      return `${raw}${raw.includes('?') ? '&' : '?'}${key}=${encodeURIComponent(value)}`
+    }
+    const abs = /^https?:\/\//i.test(u) ? u : `${BASE_URL}${u}`
+    const isOss = /(\.oss-|\.aliyuncs\.com)/i.test(abs)
+    if (isOss && !/[?&]x-oss-process=/i.test(abs)) {
+      const next = `${abs}${abs.includes('?') ? '&' : '?'}x-oss-process=image%2Fformat%2Cjpg`
+      return withParam(next, 'v', IMG_VERSION || '1')
+    }
+    if (/\.(heic|heif)(\?|#|$)/i.test(abs) && !/[?&]x-oss-process=/i.test(abs)) {
+      const next = `${abs}${abs.includes('?') ? '&' : '?'}x-oss-process=image%2Fformat%2Cjpg`
+      return withParam(next, 'v', IMG_VERSION || '1')
+    }
+    return abs
   }
 
   const loadActivities = async (page: number) => {
@@ -346,7 +362,7 @@ export default function MyPage() {
       <View className='profile-header'>
         <View className='avatar-wrap'>
           {user?.avatar ? (
-            <Image src={user.avatar} className='avatar' />
+            <Image src={normalizeUrl(user.avatar)} className='avatar' lazyLoad />
           ) : (
             <View className='avatar-placeholder'>
               <Text className='avatar-text'>{displayName?.[0] || 'R'}</Text>
@@ -436,7 +452,7 @@ export default function MyPage() {
           ) : myActivities.length === 0 ? (
             <View className='empty'>
               <Text className='empty-text'>暂无报名记录</Text>
-              <View className='go-events-btn' onClick={() => Taro.navigateTo({ url: '/pages/events/index' })}>
+              <View className='go-events-btn' onClick={() => Taro.redirectTo({ url: '/pages/events/index' })}>
                 <Text className='go-events-text'>去报名活动</Text>
               </View>
             </View>
@@ -456,7 +472,7 @@ export default function MyPage() {
                     <View className='reg-card-top' onClick={() => goEventDetail(activity.id)}>
                       <View className='reg-cover-wrap'>
                         {cover ? (
-                          <Image src={cover} className='reg-cover-img' mode='aspectFill' />
+                          <Image src={cover} className='reg-cover-img' mode='aspectFill' lazyLoad />
                         ) : (
                           <View className='reg-cover-placeholder' />
                         )}
@@ -507,7 +523,7 @@ export default function MyPage() {
                 <View key={order.id} className='order-card'>
                   <View className='order-img-wrap'>
                     {order.product?.image ? (
-                      <Image src={`${BASE_URL}${order.product.image}`} className='order-img' mode='aspectFill' />
+                      <Image src={`${BASE_URL}${order.product.image}`} className='order-img' mode='aspectFill' lazyLoad />
                     ) : (
                       <View className='order-img-placeholder' />
                     )}
@@ -546,7 +562,7 @@ export default function MyPage() {
                     </Text>
                     <View className='lb-avatar-wrap'>
                       {entry.avatar ? (
-                        <Image src={entry.avatar} className='lb-avatar' mode='aspectFill' />
+                        <Image src={entry.avatar} className='lb-avatar' mode='aspectFill' lazyLoad />
                       ) : (
                         <View className='lb-avatar-placeholder'>
                           <Text className='lb-avatar-text'>{entry.username?.[0] || '?'}</Text>
@@ -565,7 +581,6 @@ export default function MyPage() {
           )}
         </View>
       )}
-
       <BottomNav current='my' />
     </View>
   )

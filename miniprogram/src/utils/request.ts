@@ -6,10 +6,13 @@ import Taro from '@tarojs/taro';
 // 开发构建：http://192.168.1.5:3001
 declare const API_BASE_URL: string;
 declare const CLUB_ID: string;
+declare const ENV_NAME: string;
 export const BASE_URL: string =
   typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'https://running.dingstock.net';
 export const CLUB_ID_CONFIG: string =
-  typeof CLUB_ID !== 'undefined' && CLUB_ID ? CLUB_ID : 'xbc3mQnYPR';
+  typeof CLUB_ID !== 'undefined' && CLUB_ID
+    ? CLUB_ID
+    : (ENV_NAME === 'prod' ? 'xbc3mQnYPR' : 'Pnkym4dvq4');
 
 let cachedToken: string | null = null;
 

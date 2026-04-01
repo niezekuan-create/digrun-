@@ -11,7 +11,7 @@ export default function LoginPage() {
 
   useLoad(() => {
     if (isLoggedIn()) {
-      Taro.reLaunch({ url: '/pages/events/index' })
+      Taro.redirectTo({ url: '/pages/events/index' })
     }
   })
 
@@ -33,7 +33,7 @@ export default function LoginPage() {
           is_admin: !!profile?.isAdmin,
         } as any)
       }
-      Taro.reLaunch({ url: '/pages/events/index' })
+      Taro.redirectTo({ url: '/pages/events/index' })
     } catch (err: any) {
       const msg = String(err?.message || '')
       Taro.showToast({ title: msg || '登录失败，请重试', icon: 'none' })
@@ -58,6 +58,7 @@ export default function LoginPage() {
         src={require('../../assets/images/splash.jpg')}
         className='splash-bg'
         mode='aspectFill'
+        lazyLoad
       />
 
       {/* 暗色遮罩 */}
@@ -71,6 +72,7 @@ export default function LoginPage() {
             src={require('../../assets/images/logo.png')}
             className='splash-logo'
             mode='aspectFit'
+            lazyLoad
           />
         </View>
 
