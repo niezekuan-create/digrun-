@@ -185,10 +185,6 @@ page {
 .detail-section {
   padding: 32rpx 40rpx;
   border-bottom: 1rpx solid #141414;
-
-  &.detail-section-tap {
-    // tappable row hint via route-hint
-  }
 }
 
 .section-label {
@@ -206,38 +202,6 @@ page {
   color: #ccc;
   line-height: 1.7;
   letter-spacing: 0.5px;
-}
-
-// ── Avatars ────────────────────────────────────────
-.avatar-row {
-  display: flex;
-  align-items: center;
-  margin-top: 20rpx;
-}
-
-.reg-avatar {
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: 28rpx;
-  border: 2rpx solid #0a0a0a;
-  margin-left: -10rpx;
-  background: #1c1c1c;
-
-  &:first-child {
-    margin-left: 0;
-  }
-
-  &.reg-avatar-more {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #1c1c1c;
-  }
-}
-
-.reg-avatar-more-text {
-  font-size: 24rpx;
-  color: #666;
 }
 
 // ── Points ─────────────────────────────────────────

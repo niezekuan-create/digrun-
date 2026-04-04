@@ -4,10 +4,11 @@ page {
 }
 
 .events-page {
-  min-height: 100vh;
+  height: 100vh;
   background: #0a0a0a;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 // ── 页头 ──────────────────────────────────────────────────
@@ -66,8 +67,9 @@ page {
 
 // ── 滚动区 ────────────────────────────────────────────────
 .events-scroll {
-  flex: 1;
-  height: 0;
+  height: calc(100vh - 360rpx);
+  padding: 0 0 calc(140rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
 }
 
 .scroll-spacer {
@@ -217,31 +219,11 @@ page {
   text-overflow: ellipsis;
 }
 
-// 底部：人数 + 报名按钮
 .info-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20rpx;
-}
-
-.footer-capacity {
-  display: flex;
-  align-items: baseline;
-  gap: 8rpx;
-}
-
-.capacity-num {
-  font-size: 28rpx;
-  font-weight: 800;
-  color: rgba(255, 255, 255, 0.85);
-  letter-spacing: 1px;
-}
-
-.capacity-label {
-  font-size: 20rpx;
-  color: rgba(255, 255, 255, 0.3);
-  letter-spacing: 1px;
 }
 
 .footer-btn {

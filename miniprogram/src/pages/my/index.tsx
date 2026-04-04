@@ -2,11 +2,20 @@ import { View, Text, Image } from '@tarojs/components'
 import { useDidShow, useLoad, useReachBottom } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import { useEffect, useRef, useState } from 'react'
-import { request, BASE_URL, userManager, CLUB_ID_CONFIG } from '../../utils/request'
+import {
+  request,
+  userManager,
+  CLUB_ID_CONFIG,
+  normalizeImageUrl,
+  cleanText,
+  toMs,
+  toNumberOrNull,
+  redirectToLogin,
+  handleRequestError,
+} from '../../utils/request'
 import { getUserInfo, logout, setUserInfo } from '../../utils/auth'
 import './index.scss'
 import BottomNav from '../../components/BottomNav/index'
-declare const IMG_VERSION: string
 
 declare const FORCE_ADMIN: boolean
 
@@ -41,6 +50,8 @@ interface MyActivity {
   city?: string
   province?: string
   posterUrl?: string
+  start?: number
+  displayStatus?: string
 }
 
 interface PointsOrder {
@@ -64,10 +75,89 @@ interface ClubLeaderboardRow {
   point: number
 }
 
+type MyTabKey = 'events' | 'orders' | 'leaderboard'
+
+type LeaderboardApiItem = {
+  avatar?: string
+  username: string
+  point: number | string
+}
+
 const ORDER_STATUS_LABEL: Record<string, string> = {
-  pending:   '待处理',
+  pending: '待处理',
   completed: '已完成',
   cancelled: '已取消',
+}
+
+const TAB_LABELS: Record<MyTabKey, string> = {
+  events: '我的活动',
+  orders: '兑换记录',
+  leaderboard: '积分排行榜',
+}
+
+const TAB_KEYS: MyTabKey[] = ['events', 'orders', 'leaderboard']
+const MEDALS = ['🥇', '🥈', '🥉']
+
+const normalizeMyActivity = (value: any): MyActivity => ({
+  id: String(value?.id || ''),
+  name: cleanText(value?.name),
+  subtitle: cleanText(value?.subtitle),
+  timeStr: cleanText(value?.timeStr),
+  applyText: cleanText(value?.applyText),
+  appliable: !!value?.appliable,
+  points: toNumberOrNull(value?.points) ?? 0,
+  address: cleanText(value?.address),
+  city: cleanText(value?.city),
+  province: cleanText(value?.province),
+  posterUrl: cleanText(value?.posterUrl),
+  start: toMs(value?.start),
+  displayStatus: cleanText(value?.displayStatus ?? value?.display_status).toLowerCase(),
+})
+
+const normalizeLeaderboardRows = (list: LeaderboardApiItem[], startRank: number): ClubLeaderboardRow[] =>
+  list.map((item, index) => ({
+    rank: startRank + index + 1,
+    username: cleanText(item?.username),
+    avatar: cleanText(item?.avatar) || undefined,
+    point: toNumberOrNull(item?.point) ?? 0,
+  }))
+
+const formatDate = (dateStr: string) => {
+  const date = new Date(dateStr)
+  return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`
+}
+
+const getActivityStatusInfo = (activity: MyActivity) => {
+  const applyText = cleanText(activity.applyText)
+  const isClosed = applyText.includes('已截止') || activity.appliable === false
+  return isClosed
+    ? { label: applyText || '已截止', cls: 'status-cancel' }
+    : { label: applyText || '报名中', cls: 'status-open' }
+}
+
+const getActivityLocationText = (activity: MyActivity) =>
+  cleanText(activity.address) || cleanText(activity.city) || cleanText(activity.province)
+
+const getActivityDateText = (activity: MyActivity) => cleanText(activity.timeStr) || cleanText(activity.subtitle)
+
+const PRE_START_CANCELABLE_STATUSES = new Set([
+  'register_not_started',
+  'register_open',
+  'register_closed',
+  'event_upcoming',
+  'audit_pending',
+  'waitlist',
+  'registered',
+])
+
+const canCancelSignup = (activity: MyActivity) => {
+  if (!activity.id) return false
+
+  if (typeof activity.start === 'number') {
+    return activity.start > Date.now()
+  }
+
+  return PRE_START_CANCELABLE_STATUSES.has(cleanText(activity.displayStatus).toLowerCase())
 }
 
 export default function MyPage() {
@@ -86,7 +176,8 @@ export default function MyPage() {
   const [lbLoading, setLbLoading] = useState<boolean>(false)
   const [lbHasMore, setLbHasMore] = useState<boolean>(true)
   const [scanLoading, setScanLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'events' | 'orders' | 'leaderboard'>('events')
+  const [cancelingActivityId, setCancelingActivityId] = useState('')
+  const [activeTab, setActiveTab] = useState<MyTabKey>('events')
   const [user, setUser] = useState(() => getUserInfo())
   const clubId = CLUB_ID_CONFIG
   const lastRefreshRef = useRef(0)
@@ -117,34 +208,12 @@ export default function MyPage() {
     if (myActivities.length === 0) loadActivities(0)
   })
 
-  const cleanText = (v: any) => String(v || '').trim().replace(/^`|`$/g, '').trim()
-  const normalizeUrl = (v: any) => {
-    const u = cleanText(v)
-    if (!u) return ''
-    const withParam = (raw: string, key: string, value: string) => {
-      const re = new RegExp(`([?&])${key}=`)
-      if (re.test(raw)) return raw
-      return `${raw}${raw.includes('?') ? '&' : '?'}${key}=${encodeURIComponent(value)}`
-    }
-    const abs = /^https?:\/\//i.test(u) ? u : `${BASE_URL}${u}`
-    const isOss = /(\.oss-|\.aliyuncs\.com)/i.test(abs)
-    if (isOss && !/[?&]x-oss-process=/i.test(abs)) {
-      const next = `${abs}${abs.includes('?') ? '&' : '?'}x-oss-process=image%2Fformat%2Cjpg`
-      return withParam(next, 'v', IMG_VERSION || '1')
-    }
-    if (/\.(heic|heif)(\?|#|$)/i.test(abs) && !/[?&]x-oss-process=/i.test(abs)) {
-      const next = `${abs}${abs.includes('?') ? '&' : '?'}x-oss-process=image%2Fformat%2Cjpg`
-      return withParam(next, 'v', IMG_VERSION || '1')
-    }
-    return abs
-  }
-
   const loadActivities = async (page: number) => {
     if (actLoading) return
     setActLoading(true)
     try {
       if (!userManager.hasToken()) {
-        Taro.redirectTo({ url: '/pages/login/index' })
+        redirectToLogin()
         return
       }
       const res = await request<ApiRes<MyActivity[]>>({
@@ -152,30 +221,12 @@ export default function MyPage() {
       })
       if (res?.err) throw new Error(res?.msg || 'activities_failed')
       const list = Array.isArray(res?.data) ? res.data : []
-      const next = list.map((it) => ({
-        id: String((it as any)?.id || ''),
-        name: cleanText((it as any)?.name),
-        subtitle: cleanText((it as any)?.subtitle),
-        timeStr: cleanText((it as any)?.timeStr),
-        applyText: cleanText((it as any)?.applyText),
-        appliable: !!(it as any)?.appliable,
-        points: typeof (it as any)?.points === 'number' ? (it as any).points : Number((it as any)?.points || 0),
-        address: cleanText((it as any)?.address),
-        city: cleanText((it as any)?.city),
-        province: cleanText((it as any)?.province),
-        posterUrl: cleanText((it as any)?.posterUrl),
-      }))
+      const next = list.map(normalizeMyActivity)
       setMyActivities((prev) => (page === 0 ? next : [...prev, ...next]))
       setActPage(page)
       setActHasMore(list.length > 0)
     } catch (e: any) {
-      const msg = String(e?.message || e || '')
-      if (msg.includes('Unauthorized')) {
-        Taro.showToast({ title: '请重新登录', icon: 'none' })
-        setTimeout(() => Taro.redirectTo({ url: '/pages/login/index' }), 600)
-      } else {
-        Taro.showToast({ title: '获取活动列表失败', icon: 'none' })
-      }
+      handleRequestError(e, '获取活动列表失败')
       setActHasMore(false)
     } finally {
       setActLoading(false)
@@ -187,34 +238,23 @@ export default function MyPage() {
     setLbLoading(true)
     try {
       if (!userManager.hasToken()) {
-        Taro.redirectTo({ url: '/pages/login/index' })
+        redirectToLogin()
         return
       }
-      const res = await request<ApiRes<Array<{ avatar?: string; username: string; point: number | string }>>>({
+      const res = await request<ApiRes<LeaderboardApiItem[]>>({
         url: `/api/mini/club/leaderboard?clubId=${clubId}&page=${page}`,
       })
       if (res?.err) throw new Error(res?.msg || 'leaderboard_failed')
       const list = Array.isArray(res?.data) ? res.data : []
       setLeaderboard((prev) => {
         const start = page === 0 ? 0 : prev.length
-        const nextRows: ClubLeaderboardRow[] = list.map((it, idx) => ({
-          rank: start + idx + 1,
-          username: cleanText(it?.username),
-          avatar: cleanText(it?.avatar) || undefined,
-          point: typeof it?.point === 'number' ? it.point : Number(it?.point || 0),
-        }))
+        const nextRows = normalizeLeaderboardRows(list, start)
         return page === 0 ? nextRows : [...prev, ...nextRows]
       })
       setLbPage(page)
       setLbHasMore(list.length > 0)
     } catch (e: any) {
-      const msg = String(e?.message || e || '')
-      if (msg.includes('Unauthorized')) {
-        Taro.showToast({ title: '请重新登录', icon: 'none' })
-        setTimeout(() => Taro.redirectTo({ url: '/pages/login/index' }), 600)
-      } else {
-        Taro.showToast({ title: '获取排行榜失败', icon: 'none' })
-      }
+      handleRequestError(e, '获取排行榜失败')
       setLbHasMore(false)
     } finally {
       setLbLoading(false)
@@ -244,20 +284,11 @@ export default function MyPage() {
 
   const loadAll = async () => {
     if (!userManager.hasToken()) {
-      Taro.redirectTo({ url: '/pages/login/index' })
+      redirectToLogin()
       return
     }
 
     try {
-      const toNumberOrNull = (v: any): number | null => {
-        if (typeof v === 'number' && Number.isFinite(v)) return v
-        if (typeof v === 'string') {
-          const n = Number(v)
-          return Number.isFinite(n) ? n : null
-        }
-        return null
-      }
-
       const res = await request<ApiRes<MiniUserProfile>>({ url: `/api/mini/user/info?clubId=${clubId}` })
       if (res?.err) throw new Error(res?.msg || 'user_info_failed')
       const data = res?.data
@@ -279,13 +310,7 @@ export default function MyPage() {
         setUser(nextUser as any)
       }
     } catch (e: any) {
-      const msg = String(e?.message || e || '')
-      if (msg.includes('Unauthorized')) {
-        Taro.showToast({ title: '请重新登录', icon: 'none' })
-        setTimeout(() => Taro.redirectTo({ url: '/pages/login/index' }), 600)
-      } else {
-        Taro.showToast({ title: '获取用户信息失败', icon: 'none' })
-      }
+      handleRequestError(e, '获取用户信息失败')
     }
   }
 
@@ -293,20 +318,56 @@ export default function MyPage() {
     Taro.navigateTo({ url: `/pages/events/detail?activityId=${eventId}` })
   }
 
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr)
-    return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`
-  }
-
   const checkinCount = checkedCount
   const activeCount = joinedCount
 
   const goAdmin = () => Taro.navigateTo({ url: '/pages/admin/index' })
 
+  const handleCancelSignup = async (activity: MyActivity) => {
+    if (!canCancelSignup(activity)) return
+    if (!userManager.hasToken()) {
+      redirectToLogin()
+      return
+    }
+
+    const confirmed = await new Promise<boolean>((resolve) => {
+      Taro.showModal({
+        title: '取消报名',
+        content: `确认取消「${activity.name || '该活动'}」的报名吗？`,
+        confirmText: '确认取消',
+        confirmColor: '#ef4444',
+        cancelText: '再想想',
+        success: (res) => resolve(!!res.confirm),
+        fail: () => resolve(false),
+      })
+    })
+
+    if (!confirmed) return
+
+    setCancelingActivityId(activity.id)
+    try {
+      const res: any = await request({
+        url: `/api/mini/activities/cancel/${activity.id}`,
+        method: 'POST',
+      })
+      if (res?.err) throw new Error(res?.msg || res?.message || 'cancel_signup_failed')
+
+      Taro.showToast({ title: '已取消报名', icon: 'success' })
+      setMyActivities((prev) => prev.filter((item) => item.id !== activity.id))
+      setJoinedCount((prev) => Math.max(0, prev - 1))
+      loadActivities(0)
+      loadAll()
+    } catch (e: any) {
+      handleRequestError(e, '取消报名失败')
+    } finally {
+      setCancelingActivityId('')
+    }
+  }
+
   const handleScanVerify = async () => {
     if (scanLoading) return
     if (!userManager.hasToken()) {
-      Taro.redirectTo({ url: '/pages/login/index' })
+      redirectToLogin()
       return
     }
     setScanLoading(true)
@@ -351,7 +412,6 @@ export default function MyPage() {
     }
   }
 
-  const MEDALS = ['🥇', '🥈', '🥉']
   const hasToken = userManager.hasToken()
   const displayName = (user as any)?.nickname || (user as any)?.username || username || '跑者'
   const showAdmin = !!FORCE_ADMIN || isAdmin || !!user?.is_admin
@@ -362,7 +422,7 @@ export default function MyPage() {
       <View className='profile-header'>
         <View className='avatar-wrap'>
           {user?.avatar ? (
-            <Image src={normalizeUrl(user.avatar)} className='avatar' lazyLoad />
+            <Image src={normalizeImageUrl(user.avatar)} className='avatar' lazyLoad />
           ) : (
             <View className='avatar-placeholder'>
               <Text className='avatar-text'>{displayName?.[0] || 'R'}</Text>
@@ -399,7 +459,7 @@ export default function MyPage() {
               <Text className='logout-text'>退出</Text>
             </View>
           ) : (
-            <View className='logout-btn' onClick={() => Taro.redirectTo({ url: '/pages/login/index' })}>
+            <View className='logout-btn' onClick={redirectToLogin}>
               <Text className='logout-text'>登录</Text>
             </View>
           )}
@@ -407,16 +467,7 @@ export default function MyPage() {
       </View>
 
       {/* ── 积分入口 ── */}
-      <View
-        className='points-entry'
-        onClick={() => {
-          if (!hasToken) {
-            Taro.redirectTo({ url: '/pages/login/index' })
-            return
-          }
-          Taro.navigateTo({ url: '/pages/points/my' })
-        }}
-      >
+      <View className='points-entry'>
         <View className='points-entry-left'>
           <Text className='points-entry-icon'>◇</Text>
           <Text className='points-entry-label'>我的积分</Text>
@@ -429,15 +480,13 @@ export default function MyPage() {
 
       {/* ── Tab 横向入口 ── */}
       <View className='my-tabs'>
-        {(['events', 'orders', 'leaderboard'] as const).map(tab => (
+        {TAB_KEYS.map(tab => (
           <View
             key={tab}
             className={`my-tab${activeTab === tab ? ' my-tab-active' : ''}`}
             onClick={() => setActiveTab(tab)}
           >
-            <Text className='my-tab-text'>
-              {tab === 'events' ? '我的活动' : tab === 'orders' ? '兑换记录' : '积分排行榜'}
-            </Text>
+            <Text className='my-tab-text'>{TAB_LABELS[tab]}</Text>
           </View>
         ))}
       </View>
@@ -459,14 +508,12 @@ export default function MyPage() {
           ) : (
             <View className='regs-list'>
               {myActivities.map((activity) => {
-                const applyText = cleanText(activity.applyText)
-                const isClosed = applyText.includes('已截止') || activity.appliable === false
-                const statusInfo = isClosed
-                  ? { label: applyText || '已截止', cls: 'status-cancel' }
-                  : { label: applyText || '报名中', cls: 'status-open' }
-                const locationText = cleanText(activity.address) || cleanText(activity.city) || cleanText(activity.province)
-                const dateText = cleanText(activity.timeStr) || cleanText(activity.subtitle)
-                const cover = normalizeUrl(activity.posterUrl)
+                const statusInfo = getActivityStatusInfo(activity)
+                const locationText = getActivityLocationText(activity)
+                const dateText = getActivityDateText(activity)
+                const cover = normalizeImageUrl(activity.posterUrl)
+                const canCancel = canCancelSignup(activity)
+                const isCanceling = cancelingActivityId === activity.id
                 return (
                   <View key={activity.id} className='reg-card'>
                     <View className='reg-card-top' onClick={() => goEventDetail(activity.id)}>
@@ -497,6 +544,16 @@ export default function MyPage() {
                       <View className='reg-action' onClick={() => goEventDetail(activity.id)}>
                         <Text className='reg-action-text'>查看详情 →</Text>
                       </View>
+                      {canCancel && (
+                        <View
+                          className={`reg-action reg-action-danger${isCanceling ? ' reg-action-disabled' : ''}`}
+                          onClick={isCanceling ? undefined : () => handleCancelSignup(activity)}
+                        >
+                          <Text className='reg-action-text reg-action-text-danger'>
+                            {isCanceling ? '取消中...' : '取消报名'}
+                          </Text>
+                        </View>
+                      )}
                     </View>
                   </View>
                 )
@@ -523,7 +580,7 @@ export default function MyPage() {
                 <View key={order.id} className='order-card'>
                   <View className='order-img-wrap'>
                     {order.product?.image ? (
-                      <Image src={`${BASE_URL}${order.product.image}`} className='order-img' mode='aspectFill' lazyLoad />
+                      <Image src={normalizeImageUrl(order.product.image)} className='order-img' mode='aspectFill' lazyLoad />
                     ) : (
                       <View className='order-img-placeholder' />
                     )}
@@ -562,7 +619,7 @@ export default function MyPage() {
                     </Text>
                     <View className='lb-avatar-wrap'>
                       {entry.avatar ? (
-                        <Image src={entry.avatar} className='lb-avatar' mode='aspectFill' lazyLoad />
+                        <Image src={normalizeImageUrl(entry.avatar)} className='lb-avatar' mode='aspectFill' lazyLoad />
                       ) : (
                         <View className='lb-avatar-placeholder'>
                           <Text className='lb-avatar-text'>{entry.username?.[0] || '?'}</Text>

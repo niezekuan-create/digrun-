@@ -7,6 +7,7 @@ import Taro from '@tarojs/taro';
 declare const API_BASE_URL: string;
 declare const CLUB_ID: string;
 declare const ENV_NAME: string;
+declare const IMG_VERSION: string;
 export const BASE_URL: string =
   typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'https://running.dingstock.net';
 export const CLUB_ID_CONFIG: string =
@@ -53,6 +54,54 @@ export function clearToken() {
   userManager.clearToken();
 }
 
+export function cleanText(input: any): string {
+  return String(input ?? '').trim().replace(/^`+|`+$/g, '').trim();
+}
+
+export function toNumber(input: any): number | undefined {
+  if (typeof input === 'number') return Number.isFinite(input) ? input : undefined;
+  if (typeof input === 'string' && input.trim()) {
+    const parsed = Number(input);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
+
+export function toNumberOrNull(input: any): number | null {
+  return toNumber(input) ?? null;
+}
+
+export function toMs(input: any): number | undefined {
+  const timestamp = toNumber(input);
+  if (!timestamp || timestamp <= 0) return undefined;
+  return timestamp < 1e12 ? timestamp * 1000 : timestamp;
+}
+
+export function toDate(input: any): Date | null {
+  const ms = toMs(input);
+  if (!ms) return null;
+  const date = new Date(ms);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+export function redirectToLogin() {
+  Taro.redirectTo({ url: '/pages/login/index' });
+}
+
+export function isUnauthorizedError(error: unknown): boolean {
+  return String((error as any)?.message || error || '').includes('Unauthorized');
+}
+
+export function handleRequestError(error: unknown, fallbackTitle: string) {
+  if (isUnauthorizedError(error)) {
+    Taro.showToast({ title: '请重新登录', icon: 'none' });
+    setTimeout(redirectToLogin, 600);
+    return;
+  }
+
+  Taro.showToast({ title: fallbackTitle, icon: 'none' });
+}
+
 interface RequestOptions {
   url: string;
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -96,4 +145,37 @@ export function request<T = any>(options: RequestOptions): Promise<T> {
       },
     });
   });
+}
+
+export function normalizeImageUrl(input: any): string {
+  const raw = cleanText(input);
+  if (!raw) return '';
+
+  const abs = /^https?:\/\//i.test(raw) ? raw : `${BASE_URL}${raw.startsWith('/') ? raw : `/${raw}`}`;
+  const parts = abs.split('#');
+  const base = parts[0];
+  const hash = parts.length > 1 ? `#${parts.slice(1).join('#')}` : '';
+
+  const hasParam = (url: string, key: string) => new RegExp(`([?&])${key}=`).test(url);
+  const withParam = (url: string, key: string, value: string) => {
+    if (hasParam(url, key)) return url;
+    const joiner = url.includes('?') ? (url.endsWith('?') || url.endsWith('&') ? '' : '&') : '?';
+    return `${url}${joiner}${key}=${encodeURIComponent(value)}`;
+  };
+
+  const isOss = /(\.oss-|\.aliyuncs\.com|dingstock)/i.test(base);
+  const isHeic = /\.(heic|heif)(\?|$)/i.test(base);
+
+  let next = base;
+  if ((isOss || isHeic) && !hasParam(next, 'x-oss-process')) {
+    next = withParam(next, 'x-oss-process', 'image/format,jpg');
+  }
+
+  const version =
+    typeof IMG_VERSION !== 'undefined' && String(IMG_VERSION || '').trim()
+      ? String(IMG_VERSION).trim()
+      : '1';
+  next = withParam(next, 'v', version);
+
+  return `${next}${hash}`;
 }

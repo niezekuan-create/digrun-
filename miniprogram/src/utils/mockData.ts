@@ -3,6 +3,8 @@
  * 接口文档见 doc/api/activities.md
  */
 
+import type { ActivitySummary, MiniActivityDisplayStatus } from './activity'
+
 // 本地测试图片（真实接口上线后改为 CDN URL）
 const LSD1 = require('../assets/images/splash.jpg')
 const LSD2 = require('../assets/images/logo.png')
@@ -11,21 +13,7 @@ const LSD2 = require('../assets/images/logo.png')
 const now = () => Date.now()
 const DAY = 86400000
 
-export interface MockActivity {
-  id: string
-  name: string
-  subtitle?: string
-  posterUrl?: string
-  appliable?: boolean
-  applyText?: string
-  timeStr?: string
-  route?: string
-  address?: string
-  city?: string
-  start?: number
-  joinCount?: number
-  count?: number
-}
+export interface MockActivity extends ActivitySummary {}
 
 export interface MockActivityDetail {
   id: string
@@ -59,7 +47,10 @@ export interface MockActivityDetail {
   memberOnly?: boolean
   requireSize?: boolean
   requireXhs?: boolean
+  displayStatus?: MiniActivityDisplayStatus | string
 }
+
+const MOCK_CLUB = { id: 'xbc3mQnYPR', name: 'DIG RUNNING CLUB', avatar: '' }
 
 const ALL_MOCK_ACTIVITIES: MockActivity[] = [
   {
@@ -75,6 +66,7 @@ const ALL_MOCK_ACTIVITIES: MockActivity[] = [
     start: now() + 3 * DAY,
     joinCount: 12,
     count: 30,
+    displayStatus: 'register_open',
   },
   {
     id: 'lsd002',
@@ -89,6 +81,7 @@ const ALL_MOCK_ACTIVITIES: MockActivity[] = [
     start: now() + 11 * DAY,
     joinCount: 5,
     count: 30,
+    displayStatus: 'register_open',
   },
   {
     id: 'lsd000',
@@ -103,8 +96,25 @@ const ALL_MOCK_ACTIVITIES: MockActivity[] = [
     start: now() - 10 * DAY,
     joinCount: 28,
     count: 30,
+    displayStatus: 'ended',
   },
 ]
+
+const MOCK_ACTIVITY_MAP: Record<string, MockActivity> = Object.fromEntries(
+  ALL_MOCK_ACTIVITIES.map((activity) => [activity.id, activity]),
+)
+
+const createMockActivityDetail = (
+  activityId: string,
+  overrides: Partial<Omit<MockActivityDetail, 'id' | 'club'>>,
+): MockActivityDetail => {
+  const summary = MOCK_ACTIVITY_MAP[activityId]
+  return {
+    ...(summary || { id: activityId, name: '活动' }),
+    club: MOCK_CLUB,
+    ...overrides,
+  }
+}
 
 // ── 列表 ──────────────────────────────────────────────────
 export const getMockActivitiesList = (_clubId?: string, status?: 'upcoming' | 'ended'): { data: MockActivity[] } => {
@@ -119,24 +129,15 @@ export const getMockActivitiesList = (_clubId?: string, status?: 'upcoming' | 'e
 
 // ── 详情 ──────────────────────────────────────────────────
 const DETAIL_MAP: Record<string, MockActivityDetail> = {
-  lsd001: {
-    id: 'lsd001',
-    club: { id: 'xbc3mQnYPR', name: 'DIG RUNNING CLUB', avatar: '' },
-    name: 'DRC LSD RUN Vol.1',
-    subtitle: 'Long Slow Distance',
+  lsd001: createMockActivityDetail('lsd001', {
     description:
       'LSD（Long Slow Distance）是跑步训练中最基础也最重要的训练方式。\n\n以轻松配速完成长距离跑，提升有氧基础，让身体在低强度下适应长时间运动。\n\n本次路线沿锦江滨河绿道展开，全程 30KM，沿途风景优美，补给充足。完成活动可获得积分奖励。',
     start: now() + 3 * DAY,
     end: now() + 3 * DAY + 4 * 3600000,
     applyStart: now() - DAY,
     applyEnd: now() + DAY,
-    posterUrl: LSD1,
-    address: '东湖公园南门 · 锦江沿线 30KM',
-    city: '成都',
     province: '四川',
     location: { longitude: 104.0817, latitude: 30.6599 },
-    count: 30,
-    joinCount: 12,
     waitlistCount: 0,
     maxWaitlist: 10,
     points: 10,
@@ -148,25 +149,16 @@ const DETAIL_MAP: Record<string, MockActivityDetail> = {
     memberOnly: false,
     requireSize: false,
     requireXhs: false,
-  },
-  lsd002: {
-    id: 'lsd002',
-    club: { id: 'xbc3mQnYPR', name: 'DIG RUNNING CLUB', avatar: '' },
-    name: 'DRC LSD RUN Vol.2',
-    subtitle: 'Long Slow Distance',
+  }),
+  lsd002: createMockActivityDetail('lsd002', {
     description:
       'DRC LSD RUN 第二站来到上海滨江。\n\n沿黄浦江滨江跑道展开，全程 10KM，适合所有配速的跑者参与。\n\n活动结束后在集合点进行拉伸和分享，欢迎带上你的跑步故事。完成活动可获得积分奖励。',
     start: now() + 11 * DAY,
     end: now() + 11 * DAY + 2 * 3600000,
     applyStart: now() - DAY,
     applyEnd: now() + 8 * DAY,
-    posterUrl: LSD2,
-    address: '滨江公园 · 黄浦江沿线 10KM',
-    city: '上海',
     province: '上海',
     location: { longitude: 121.4737, latitude: 31.2304 },
-    count: 30,
-    joinCount: 5,
     waitlistCount: 0,
     maxWaitlist: 10,
     points: 10,
@@ -178,7 +170,26 @@ const DETAIL_MAP: Record<string, MockActivityDetail> = {
     memberOnly: false,
     requireSize: false,
     requireXhs: false,
-  },
+  }),
+  lsd000: createMockActivityDetail('lsd000', {
+    description:
+      '这是一次已经结束的 LSD 训练活动，用于覆盖活动详情页在已结束状态下的展示逻辑。',
+    start: now() - 10 * DAY,
+    end: now() - 10 * DAY + 3 * 3600000,
+    applyStart: now() - 15 * DAY,
+    applyEnd: now() - 11 * DAY,
+    province: '四川',
+    location: { longitude: 104.0817, latitude: 30.6599 },
+    waitlistCount: 0,
+    maxWaitlist: 10,
+    points: 10,
+    joinAvatars: [],
+    btnText: '已结束',
+    btnStatus: false,
+    memberOnly: false,
+    requireSize: false,
+    requireXhs: false,
+  }),
 }
 
 export const getMockActivityDetail = (id: string): { data: MockActivityDetail } | null => {

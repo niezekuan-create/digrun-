@@ -7,7 +7,7 @@ export default {
     CLUB_ID: '"xbc3mQnYPR"',
     FORCE_ADMIN: 'false',
     ENV_NAME: '"prod"',
-    IMG_VERSION: '"2"',
+    IMG_VERSION: '"3"',
   },
   mini: {},
   h5: {},

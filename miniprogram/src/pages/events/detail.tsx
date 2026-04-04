@@ -2,11 +2,19 @@ import { View, Text, ScrollView, Image, Input } from '@tarojs/components'
 import { useLoad, useRouter } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import { useState } from 'react'
-import { request } from '../../utils/request'
+import { request, normalizeImageUrl, cleanText } from '../../utils/request'
+import {
+  type MiniActivityDisplayStatus,
+  formatDateShort,
+  getActivityApplyRange,
+  getActivityCtaState,
+  getActivityDates,
+  getActivityTimeRange,
+  normalizeActivityDetail,
+} from '../../utils/activity'
 import { getMockActivityDetail } from '../../utils/mockData'
 import { isLoggedIn, getUserInfo } from '../../utils/auth'
 import './detail.scss'
-declare const IMG_VERSION: string
 
 interface ActivityDetail {
   id: string
@@ -27,14 +35,7 @@ interface ActivityDetail {
   route?: string
   count?: number
   joinCount?: number
-  waitlistCount?: number
-  maxWaitlist?: number
   points?: number
-  joinAvatars?: string[]
-  location?: {
-    longitude: number | null
-    latitude: number | null
-  }
   appliable?: boolean
   applyText?: string
   timeStr?: string
@@ -42,9 +43,22 @@ interface ActivityDetail {
   btnStatus?: boolean
   isSignedUp?: boolean
   isChecked?: boolean
-  registrationId?: number
   requireSize?: boolean
   requireXhs?: boolean
+  displayStatus?: MiniActivityDisplayStatus | string
+}
+
+type ActivityDetailResponse = {
+  data: ActivityDetail
+  err: boolean
+}
+
+type SignupFormState = {
+  name: string
+  mobile: string
+  clothingSize: string
+  shoeSize: string
+  xhsLink: string
 }
 
 export default function EventDetailPage() {
@@ -54,7 +68,7 @@ export default function EventDetailPage() {
   const [topPadding, setTopPadding] = useState(0)
   const [signupVisible, setSignupVisible] = useState(false)
   const [signupSubmitting, setSignupSubmitting] = useState(false)
-  const [signupForm, setSignupForm] = useState({
+  const [signupForm, setSignupForm] = useState<SignupFormState>({
     name: '',
     mobile: '',
     clothingSize: '',
@@ -79,60 +93,14 @@ export default function EventDetailPage() {
 
   const loadData = async (id: string) => {
     try {
-      const res = await request<{ data: ActivityDetail; err: boolean }>({ url: `/api/mini/activities/detail/${id}` })
-      const raw: any = (res as any)?.data
-      const normalizeDetail = (v: any): ActivityDetail | null => {
-        if (!v || typeof v !== 'object') return null
-        const joinCountRaw =
-          (v as any).joinCount ??
-          (v as any).join_count ??
-          (v as any).joinedCount ??
-          (v as any).joined_count ??
-          (v as any).registrationCount ??
-          (v as any).registration_count ??
-          (v as any).participantsCount ??
-          (v as any).participants_count
-
-        const joinCount =
-          typeof joinCountRaw === 'number'
-            ? joinCountRaw
-            : typeof joinCountRaw === 'string'
-              ? Number(joinCountRaw)
-              : undefined
-
-        return {
-          ...(v as any),
-          joinCount: Number.isFinite(joinCount as any) ? (joinCount as any) : (v as any).joinCount,
-        }
-      }
-      setActivity(normalizeDetail(raw))
+      const res = await request<ActivityDetailResponse>({ url: `/api/mini/activities/detail/${id}` })
+      setActivity(normalizeActivityDetail<ActivityDetail>((res as any)?.data))
     } catch (e) {
       const mock = getMockActivityDetail(id)
-      if (mock) setActivity(mock.data as ActivityDetail)
+      if (mock) setActivity(normalizeActivityDetail<ActivityDetail>(mock.data))
     } finally {
       setLoading(false)
     }
-  }
-
-  const normalizeUrl = (url?: string) => {
-    if (!url) return ''
-    const u = url.trim().replace(/^`+|`+$/g, '')
-    if (!u) return ''
-    const withParam = (raw: string, key: string, value: string) => {
-      const re = new RegExp(`([?&])${key}=`)
-      if (re.test(raw)) return raw
-      return `${raw}${raw.includes('?') ? '&' : '?'}${key}=${encodeURIComponent(value)}`
-    }
-    const isOss = /(\.oss-|\.aliyuncs\.com)/i.test(u)
-    if (isOss && !/[?&]x-oss-process=/i.test(u)) {
-      const next = `${u}${u.includes('?') ? '&' : '?'}x-oss-process=image%2Fformat%2Cjpg`
-      return withParam(next, 'v', IMG_VERSION || '1')
-    }
-    if (/\.(heic|heif)(\?|#|$)/i.test(u) && !/[?&]x-oss-process=/i.test(u)) {
-      const next = `${u}${u.includes('?') ? '&' : '?'}x-oss-process=image%2Fformat%2Cjpg`
-      return withParam(next, 'v', IMG_VERSION || '1')
-    }
-    return u
   }
 
   const openSignupModal = () => {
@@ -166,7 +134,7 @@ export default function EventDetailPage() {
     const clothingSize = signupForm.clothingSize.trim()
     const shoeSize = signupForm.shoeSize.trim()
     const rawXhsLink = signupForm.xhsLink.trim()
-    const xhsLink = rawXhsLink ? normalizeUrl(rawXhsLink) : ''
+    const xhsLink = rawXhsLink ? cleanText(rawXhsLink) : ''
     const requireSize = !!activity.requireSize
     const requireXhs = !!activity.requireXhs
 
@@ -197,13 +165,14 @@ export default function EventDetailPage() {
       setActivity((prev) => (prev ? { ...prev, isSignedUp: true } : prev))
       loadData(activity.id)
     } catch (e) {
+      Taro.showToast({ title: '报名失败', icon: 'none' })
     } finally {
       setSignupSubmitting(false)
     }
   }
 
   const openRoute = async () => {
-    const url = normalizeUrl(activity?.route)
+    const url = cleanText(activity?.route)
     if (!url) return
     try {
       await Taro.setClipboardData({ data: url })
@@ -212,15 +181,6 @@ export default function EventDetailPage() {
       Taro.showToast({ title: '复制失败', icon: 'none' })
     }
   }
-
-  const formatDate = (date: Date) =>
-    `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`
-
-  const formatTime = (date: Date) =>
-    `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
-
-  const formatDateShort = (date: Date) =>
-    `${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`
 
   if (loading) {
     return (
@@ -238,78 +198,14 @@ export default function EventDetailPage() {
     )
   }
 
-  const toMs = (v: any): number | undefined => {
-    const n = typeof v === 'string' ? Number(v) : v
-    if (typeof n !== 'number' || !Number.isFinite(n) || n <= 0) return undefined
-    return n < 1e12 ? n * 1000 : n
-  }
-
-  const toDate = (v: any): Date | null => {
-    const ms = toMs(v)
-    if (!ms) return null
-    const d = new Date(ms)
-    return Number.isNaN(d.getTime()) ? null : d
-  }
-
-  const startDate = toDate(activity.start)
-  const endDate = toDate(activity.end)
-  const applyStartDate = toDate(activity.applyStart)
-  const applyEndDate = toDate(activity.applyEnd)
-
-  const timeRange = (() => {
-    if (!startDate) return activity.timeStr || ''
-    if (!endDate) return `${formatDateShort(startDate)} ${formatTime(startDate)}`
-    const sameDay =
-      startDate.getFullYear() === endDate.getFullYear() &&
-      startDate.getMonth() === endDate.getMonth() &&
-      startDate.getDate() === endDate.getDate()
-    if (sameDay) return `${formatTime(startDate)} — ${formatTime(endDate)}`
-    return `${formatDateShort(startDate)} ${formatTime(startDate)} — ${formatDateShort(endDate)} ${formatTime(endDate)}`
-  })()
-
-  const applyRange =
-    applyStartDate && applyEndDate
-      ? `${formatDate(applyStartDate)} ${formatTime(applyStartDate)} — ${formatDate(applyEndDate)} ${formatTime(applyEndDate)}`
-      : ''
-
+  const { startDate, endDate, applyStartDate, applyEndDate } = getActivityDates(activity)
+  const timeRange = getActivityTimeRange(activity, startDate, endDate)
+  const applyRange = getActivityApplyRange(activity, applyStartDate, applyEndDate)
   const joinCount = activity.joinCount ?? 0
   const capacity = activity.count ?? 0
   const points = activity.points ?? 0
-
-  const getCtaState = () => {
-    const now = Date.now()
-    const applyStart = toMs(activity.applyStart)
-    const applyEnd = toMs(activity.applyEnd)
-    const start = toMs(activity.start)
-    const end = toMs(activity.end)
-    const isSignedUp = !!activity.isSignedUp
-    const isChecked = !!activity.isChecked
-
-    if (end !== undefined && now > end) return { text: '已结束', enabled: false, action: 'none' as const }
-
-    if (start !== undefined && end !== undefined && now >= start && now <= end) {
-      if (isChecked) return { text: '已签到', enabled: false, action: 'none' as const }
-      if (isSignedUp) return { text: '签到', enabled: true, action: 'checkin' as const }
-      return { text: '未报名', enabled: false, action: 'none' as const }
-    }
-
-    if (applyStart !== undefined && now < applyStart) return { text: '未开始', enabled: false, action: 'none' as const }
-
-    const inApplyWindow =
-      applyStart !== undefined && applyEnd !== undefined ? now >= applyStart && now <= applyEnd : undefined
-
-    if (inApplyWindow !== false) {
-      if (isSignedUp) return { text: '已报名', enabled: false, action: 'none' as const }
-      if (activity.appliable) return { text: '报名', enabled: true, action: 'signup' as const }
-      return { text: activity.applyText || '已截止', enabled: false, action: 'none' as const }
-    }
-
-    if (isSignedUp) return { text: '已报名', enabled: false, action: 'none' as const }
-    return { text: activity.applyText || '已截止', enabled: false, action: 'none' as const }
-  }
-
-  const ctaState = getCtaState()
-  const clubAvatar = normalizeUrl(activity.club?.avatar)
+  const ctaState = getActivityCtaState(activity)
+  const clubAvatar = normalizeImageUrl(activity.club?.avatar)
   const clubName = activity.club?.name || 'DIG RUNNING CLUB'
 
   return (
@@ -399,7 +295,7 @@ export default function EventDetailPage() {
 
         {/* Route */}
         {activity.route ? (
-          <View className='detail-section detail-section-tap' onClick={openRoute}>
+          <View className='detail-section' onClick={openRoute}>
             <Text className='section-label'>活动路线</Text>
             <Text className='section-body route-val'>{activity.address || '查看路线'}</Text>
             <Text className='route-hint'>点击复制链接 →</Text>

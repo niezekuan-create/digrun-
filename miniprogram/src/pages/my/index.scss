@@ -174,17 +174,6 @@
   color: #555;
 }
 
-.section-header {
-  padding: 36rpx 40rpx 20rpx;
-}
-
-.section-title {
-  font-size: 28rpx;
-  color: #fff;
-  letter-spacing: 4px;
-  font-weight: 800;
-}
-
 .loading, .empty {
   height: 300rpx;
   display: flex;
@@ -280,9 +269,7 @@
   flex-shrink: 0;
 }
 
-.status-pending  { background: #2a2a1a; }
 .status-open     { background: #1a2a1a; }
-.status-checkin  { background: #1a3a1a; }
 .status-cancel   { background: #2a1a1a; }
 
 .reg-status-text {
@@ -290,9 +277,7 @@
   font-weight: 700;
   letter-spacing: 1px;
 
-  .status-pending &  { color: #d4a017; }
   .status-open &     { color: #4ade80; }
-  .status-checkin &  { color: #4ade80; }
   .status-cancel &   { color: #f87171; }
 }
 
@@ -324,6 +309,15 @@
   flex: 1;
 }
 
+.reg-action-danger {
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.reg-action-disabled {
+  opacity: 0.6;
+}
+
 .reg-action-text {
   font-size: 24rpx;
   color: #fff;
@@ -331,16 +325,8 @@
   letter-spacing: 1px;
 }
 
-.reg-cancel-btn {
-  padding: 8rpx 20rpx;
-  border: 1rpx solid #333;
-  border-radius: 6rpx;
-}
-
-.reg-cancel-text {
-  font-size: 22rpx;
-  color: #888;
-  letter-spacing: 1px;
+.reg-action-text-danger {
+  color: #f87171;
 }
 
 // ── Tab 横向入口 ──
@@ -563,25 +549,4 @@
   font-weight: 700;
   color: #fff;
   flex-shrink: 0;
-}
-
-.lb-my-rank-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 24rpx 40rpx;
-  border-top: 1rpx solid #1a1a1a;
-  margin-top: 4rpx;
-}
-
-.lb-my-rank-label {
-  font-size: 24rpx;
-  color: #555;
-  letter-spacing: 2px;
-}
-
-.lb-my-rank-val {
-  font-size: 26rpx;
-  font-weight: 700;
-  color: #fff;
 }
