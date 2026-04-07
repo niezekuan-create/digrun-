@@ -12,6 +12,7 @@ export default defineAppConfig({
     'pages/points/mall',
     'pages/points/my',
     'pages/points/orders',
+    'pages/webview/index',
   ],
   window: {
     backgroundTextStyle: 'dark',

@@ -1,0 +1,20 @@
+.taro-webview {
+  width: 100%;
+  height: 100vh;
+}
+
+.webview-fallback {
+  min-height: 100vh;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+  box-sizing: border-box;
+}
+
+.webview-fallback-text {
+  font-size: 26rpx;
+  color: #666;
+  letter-spacing: 2px;
+}
