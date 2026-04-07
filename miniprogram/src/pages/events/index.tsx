@@ -226,6 +226,9 @@ export default function EventsPage() {
 			) : (
 				<ScrollView scrollY className="events-scroll">
 					{activities.map((activity) => renderCard(activity, isEndedTab))}
+					<View className="events-list-end-placeholder">
+						<Text className="events-list-end-text">已加载完毕</Text>
+					</View>
 				</ScrollView>
 			)}
 			<BottomNav current="events" />

@@ -73,6 +73,19 @@ page {
   box-sizing: border-box;
 }
 
+.events-list-end-placeholder {
+  padding: 8rpx 0 36rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.events-list-end-text {
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.28);
+  letter-spacing: 2px;
+}
+
 // ── 活动条目 ──────────────────────────────────────────────
 .event-item {
   margin-bottom: 56rpx;
