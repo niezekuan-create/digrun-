@@ -1,5 +1,5 @@
 import { View, Text, ScrollView, Image, Input } from '@tarojs/components'
-import { useLoad, useRouter } from '@tarojs/taro'
+import { useLoad, useRouter, useShareAppMessage, useShareTimeline } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import { useState } from 'react'
 import { request, normalizeImageUrl, cleanText } from '../../utils/request'
@@ -77,6 +77,28 @@ export default function EventDetailPage() {
   })
 
   const activityId = router.params.activityId || router.params.id
+
+  useShareAppMessage(() => {
+    const id = String(activityId || '')
+    const title = activity?.name || '活动详情'
+    const imageUrl = normalizeImageUrl(activity?.posterUrl) || undefined
+    return {
+      title,
+      path: id ? `/pages/events/detail?activityId=${encodeURIComponent(id)}` : '/pages/events/index',
+      imageUrl,
+    }
+  })
+
+  useShareTimeline(() => {
+    const id = String(activityId || '')
+    const title = activity?.name || '活动详情'
+    const imageUrl = normalizeImageUrl(activity?.posterUrl) || undefined
+    return {
+      title,
+      query: id ? `activityId=${encodeURIComponent(id)}` : '',
+      imageUrl,
+    }
+  })
 
   useLoad(() => {
     try {

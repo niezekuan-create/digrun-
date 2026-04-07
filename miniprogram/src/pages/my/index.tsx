@@ -1,5 +1,5 @@
 import { View, Text, Image } from '@tarojs/components'
-import { useDidShow, useLoad, useReachBottom } from '@tarojs/taro'
+import { useDidShow, useLoad, useReachBottom, useShareAppMessage, useShareTimeline } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import { useEffect, useRef, useState } from 'react'
 import {
@@ -161,6 +161,20 @@ const canCancelSignup = (activity: MyActivity) => {
 }
 
 export default function MyPage() {
+  useShareAppMessage(() => {
+    return {
+      title: 'DIG RUNNING CLUB',
+      path: '/pages/events/index',
+    }
+  })
+
+  useShareTimeline(() => {
+    return {
+      title: 'DIG RUNNING CLUB',
+      query: '',
+    }
+  })
+
   const [myActivities, setMyActivities] = useState<MyActivity[]>([])
   const [actPage, setActPage] = useState<number>(0)
   const [actLoading, setActLoading] = useState<boolean>(false)

@@ -1,5 +1,5 @@
 import { View, Text, Image, ScrollView } from "@tarojs/components";
-import { useLoad } from "@tarojs/taro";
+import { useLoad, useShareAppMessage, useShareTimeline } from "@tarojs/taro";
 import Taro from "@tarojs/taro";
 import { useState, useRef } from "react";
 import {
@@ -43,6 +43,20 @@ export default function EventsPage() {
 	const [loadingEnded, setLoadingEnded] = useState(false);
 	const loadedEnded = useRef(false);
 	const clubId = CLUB_ID_CONFIG;
+
+	useShareAppMessage(() => {
+		return {
+			title: "DIG RUNNING CLUB",
+			path: "/pages/events/index",
+		};
+	});
+
+	useShareTimeline(() => {
+		return {
+			title: "DIG RUNNING CLUB",
+			query: "",
+		};
+	});
 
 	useLoad(() => {
 		loadTab("upcoming");
