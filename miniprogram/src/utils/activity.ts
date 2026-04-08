@@ -99,14 +99,11 @@ const pickAvatarUrls = (value: any): string[] => {
 }
 
 export const getActivityJoinCount = (value: any): number | undefined => {
-  const joinAvatars = pickAvatarUrls(value)
-  return (
-    (joinAvatars.length > 0 ? joinAvatars.length : undefined) ?? 0
-  )
+  return toNumber(value?.joinCount) ?? 0;
 }
 
 export const getActivityCapacity = (value: any): number | undefined =>
-  toNumber(value?.count) ?? 0 
+  toNumber(value?.count) ?? 0
 
 export const normalizeActivitySummary = (value: any): ActivitySummary => ({
   id: String(value?.id ?? ''),
